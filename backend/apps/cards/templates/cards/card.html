@@ -2,6 +2,12 @@
 
 {% block title %}Create a Card{% endblock %}
 
+{% block page_title %}Create a Card for your AI Tool{% endblock %}
+
+{% block page_description %}
+Add an MCP server, agent, skill, or other AI resource to AI Playground.
+{% endblock %}
+
 {% block content %}
 
 <form method="post" action="{% url 'cards:card_create' %}">

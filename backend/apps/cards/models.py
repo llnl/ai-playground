@@ -10,7 +10,7 @@ class Cards(models.Model):
     maintainers = models.JSONField(
         default=list,
         blank=True,  # makes it optional
-        help_text=("Enter one maintainer per line using the format: Name, email address.")
+        help_text=("Enter one maintainer per line using the format: Name, email address."),
     )
 
     institution = models.CharField(max_length=200, blank=True)

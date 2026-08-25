@@ -17,8 +17,8 @@ class CardCreateView(generic.CreateView):
 def card_success(request):
     return HttpResponse("Card created successfully.")
 
+
 class CardAllView(generic.ListView):  # Listview automatically grabs all rows from database
     model = Cards
     template_name = "cards/all.html"
     context_object_name = "cards"  # html variable to cycle through database
-
