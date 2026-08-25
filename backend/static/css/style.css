@@ -1,0 +1,52 @@
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background-color: #102a43FF;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.nav-links a,
+.brand {
+    color: #fff;
+}
+
+.page-header {
+    padding: 3rem 2rem;
+    text-align: center;
+    background: linear-gradient(
+        to bottom,
+        rgba(16, 42, 67, 1) 0%,
+        rgba(23, 74, 110, 1) 100%
+    );
+}
+
+.page-header h1 {
+    margin: 0 0 0.75rem;
+    color: #fff;
+    font-size: 2.25rem;
+}
+
+.page-header p {
+    margin: 0;
+    color: #b8c2cc;
+    font-size: 1.1rem;
+}
+
+footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    background-color: #102a43;
+    color: #fff;
+}
+
+footer p {
+    margin: 0;
+}
