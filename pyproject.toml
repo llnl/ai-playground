@@ -18,6 +18,8 @@ dependencies = [
     "Pillow",
     "python-dotenv",
     "drf-spectacular",
+    "pre-commit==4.6.0",
+    "ruff>=0.16.2",
 ]
 
 classifiers = [
@@ -26,6 +28,10 @@ classifiers = [
 ]
 license = "Apache-2.0 WITH LLVM-exception"
 license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["backend*"]
+exclude = ["frontend*"]
 
 [project.urls]
 Homepage = "https://github.com/llnl/ai-playground"
@@ -67,5 +73,4 @@ all = ["ai_playground[docs, tests]"]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W"]
-
+select = ["E", "F", "I", "W", "S"]
