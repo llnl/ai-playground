@@ -1,0 +1,17 @@
+<h1>Trending Cards</h1>
+
+{% for card in cards %}
+    <article>
+        <h2>
+            <a href="{% url 'cards:card_detail' card.pk %}">
+                {{ card.name }}
+            </a>
+        </h2>
+
+        <p>{{ card.description }}</p>
+        <p>Clicks: {{ card.total_clicks }}</p>
+        <p>Impressions: {{ card.total_impressions }}</p>
+    </article>
+{% empty %}
+    <p>No trending cards yet.</p>
+{% endfor %}

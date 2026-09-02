@@ -22,7 +22,7 @@ urlpatterns = [
     # ex: /cards/skills/
     path("skills/", views.CardSkillsView.as_view(), name="card_skills"),
 
-
+    path("trending/", views.CardTrendingView.as_view(), name="trending"),
     path("my_cards/", views.MyCardListView.as_view(), name="my_cards"),
     path("<int:pk>/update/", views.CardUpdateView.as_view(), name="card_update"),
     path("<int:pk>/delete/", views.CardDeleteView.as_view(), name="card_delete"),

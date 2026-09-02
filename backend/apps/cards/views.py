@@ -2,11 +2,11 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, F, Sum
 from .forms import CardForm
-from .models import Cards
-
-
+from .models import Cards, CardMetrics
+from django.utils import timezone
+from datetime import timedelta
 # Create your views here.
 # class CardCreateView(LoginRequiredMixin, generic.CreateView):  # assigning user means logging in
 class CardCreateView(generic.CreateView):
@@ -59,6 +59,22 @@ class CardAllView(generic.ListView):  # Listview automatically grabs all rows fr
 
         return context
 
+    # last step before sending response, increment here since other methods may be called more than once
+    def render_to_response(self, context, **response_kwargs):
+        today = timezone.localdate()
+
+        for card in context["cards"]:
+            metric, _ = CardMetrics.objects.get_or_create(
+                card=card,
+                date=today,
+            )
+
+            CardMetrics.objects.filter(pk=metric.pk).update(
+                impressions=F("impressions") + 1
+            )
+
+        return super().render_to_response(context, **response_kwargs)
+
 # class CardMCPServersView(LoginRequiredMixin, generic.ListView):  # Listview automatically grabs all rows from database
 class CardMCPServersView(generic.ListView):  # Listview automatically grabs all rows from database
     model = Cards
@@ -95,11 +111,52 @@ class MyCardListView(generic.ListView):
     def get_queryset(self):
         return Cards.objects.filter(owner=self.request.user)
 
+
+class CardTrendingView(generic.ListView):
+    model = Cards
+    template_name = "cards/trending.html"
+    context_object_name = "cards"
+
+    def get_queryset(self):
+        start_date = timezone.localdate() - timedelta(days=30)
+
+        return (
+            Cards.objects
+            .filter(metrics__date__gte=start_date)
+            .annotate(
+                total_impressions=Sum("metrics__impressions"),
+                total_clicks=Sum("metrics__clicks"),
+            )
+            .annotate(
+                trending_score=(
+                    F("total_clicks") * 3
+                    + F("total_impressions")
+                )
+            )
+            .order_by("-trending_score", "name")
+        )
+
+
 # class CardDetailView(LoginRequiredMixin, generic.DetailView):  # DtailView shows one primary_key at a time
 class CardDetailView(generic.DetailView):  # DtailView shows one primary_key at a time
     model = Cards
     template_name = "cards/detail.html"
     context_object_name = "card"
+
+    # get is special built in function when page loads
+    def get(self, request, *args, **kwargs):
+            response = super().get(request, *args, **kwargs)
+
+            metric, _ = CardMetrics.objects.get_or_create(
+                card=self.object,
+                date=timezone.localdate(),
+            )
+
+            CardMetrics.objects.filter(pk=metric.pk).update(
+                clicks=F("clicks") + 1
+            )
+
+            return response
 
 # class CardUpdateView(LoginRequiredMixin, generic.UpdateView):  # gives permissions to only filters below
 class CardUpdateView(generic.UpdateView):  # gives permissions to only filters below

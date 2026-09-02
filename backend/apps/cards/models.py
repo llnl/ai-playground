@@ -71,3 +71,29 @@ class Cards(models.Model):
             "cards:card_detail",
             kwargs={"pk": self.pk}
         )
+
+
+# keep track of impressions (showed up in search results) and clicks (went to card detail)
+# on a per day status
+class CardMetrics(models.Model):
+    card = models.ForeignKey(
+        Cards,
+        on_delete=models.CASCADE,
+        related_name="metrics",
+    )
+    date = models.DateField()
+    impressions = models.PositiveIntegerField(default=0)
+    clicks = models.PositiveIntegerField(default=0)
+
+    # makes it so each card can only get one row per day and increments that row with impressions and clicks
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["card", "date"],
+                name="unique_card_metric_per_day",
+            )
+        ]
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.card.name} - {self.date}"
