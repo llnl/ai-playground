@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.db.models import Q
 from .forms import CardForm
 from .models import Cards
 
@@ -24,6 +24,40 @@ class CardAllView(generic.ListView):  # Listview automatically grabs all rows fr
     model = Cards
     template_name = "cards/all.html"
     context_object_name = "cards"  # html variable to cycle through database
+
+
+    # Query based on "cards/all.html" <form method="get"> values
+    def get_queryset(self):
+        queryset = Cards.objects.all()
+
+        search = self.request.GET.get("q", "").strip()
+        categories = self.request.GET.getlist("category")
+
+        # These match the model
+        if search:
+            queryset = queryset.filter(
+                Q(owner__username__icontains=search)
+                | Q(owner__email__icontains=search)
+                | Q(name__icontains=search)
+                | Q(description__icontains=search)
+                | Q(maintainers__icontains=search)
+                | Q(institution__icontains=search)
+                | Q(tags__icontains=search)
+            )
+
+        if categories:
+            queryset = queryset.filter(category__in=categories)
+
+        return queryset.order_by("name")
+
+    # Since page refreshes, need values from before in query
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["search_query"] = self.request.GET.get("q", "")
+        context["selected_categories"] = self.request.GET.getlist("category")
+
+        return context
 
 # class CardMCPServersView(LoginRequiredMixin, generic.ListView):  # Listview automatically grabs all rows from database
 class CardMCPServersView(generic.ListView):  # Listview automatically grabs all rows from database

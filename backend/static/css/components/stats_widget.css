@@ -43,3 +43,32 @@
     background: #50f27a;
     box-shadow: 0 0 6px #50f27a, 0 0 12px #50f27a;
 }
+
+.cards-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.cards-sidebar {
+    padding: 1.25rem;
+    border: 1px solid #2f3f35;
+    border-radius: 10px;
+}
+
+.cards-sidebar label {
+    display: block;
+    margin: 0.75rem 0;
+}
+
+.cards-table {
+    min-width: 0;
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .cards-layout {
+        grid-template-columns: 1fr;
+    }
+}
