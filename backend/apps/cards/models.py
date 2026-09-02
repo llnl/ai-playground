@@ -1,9 +1,19 @@
 from django.db import models
+from django.urls import reverse
+from django.conf import settings
 
 # Create your models here.
-
-
 class Cards(models.Model):
+
+    # Default user database from Django so we can see who created it later
+    owner = models.ForeignKey( # many-to-one relationship. Each card has one owner, while one user can own many cards.
+        settings.AUTH_USER_MODEL,  # built in django user database
+        on_delete=models.SET_NULL, # in case user gets deleted, card will still be here.
+        null=True, # just in case user gets deleted but still gets filled out on creation
+        blank=True, # just in case user gets deleted but still gets filled out on creation
+        related_name="cards",  # reverse relationship lookup from user database to cards database
+    )
+
     name = models.CharField(max_length=100)
     description = models.TextField()
 
@@ -53,3 +63,11 @@ class Cards(models.Model):
 
     def __str__(self):
         return self.name
+
+    # This gets called after a row in the database is created succesfully
+    # We send it to the card_detail url view based on its primary key
+    def get_absolute_url(self):
+        return reverse(
+            "cards:card_detail",
+            kwargs={"pk": self.pk}
+        )

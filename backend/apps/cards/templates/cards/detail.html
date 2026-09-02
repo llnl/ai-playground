@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ card.name }}{% endblock %}
+
+{% block page_title %}{{ card.name }}{% endblock %}
+
+{% block page_description %}
+{{ card.description }}
+{% endblock %}
+
+{% block content %}
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Logo URL</th>
+    </tr>
+
+</table>
+
+{% endblock %}

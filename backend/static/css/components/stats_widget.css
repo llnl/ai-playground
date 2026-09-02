@@ -1,0 +1,45 @@
+.stats-widget {
+    position: relative;
+    display: flex;
+    gap: 2rem;
+    padding: 2rem;
+    border: 1px solid #2f3f35;
+    border-radius: 12px;
+    background: #111814;
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.stat-card span {
+    color: #9ca9a0;
+    font-size: 0.85rem;
+}
+
+.stat-card strong {
+    color: #ffffff;
+    font-size: 1.6rem;
+}
+
+.live-indicator {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #50f27a;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #50f27a;
+    box-shadow: 0 0 6px #50f27a, 0 0 12px #50f27a;
+}

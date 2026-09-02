@@ -3,10 +3,11 @@
         <a href="{% url 'home' %}" class="brand">AI Playground</a>
 
         <div class="nav-links">
-            <a href="#">MCP Servers</a>
-            <a href="#">Agents</a>
-            <a href="#">Skills</a>
-            <a href="apps/cards/new/">Register Your Tool</a>
+            <a href="{% url 'cards:card_mcp_servers'%}">MCP Servers</a>
+            <a href="{% url 'cards:card_agents'%}">Agents</a>
+            <a href="{% url 'cards:card_skills'%}">Skills</a>
+            <a href="{% url 'cards:card_all'%}">All</a>
+            <a href="{% url 'cards:card_create'%}">Register Your Tool</a>
         </div>
     </nav>
 </header>
