@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}My Cards{% endblock %}
+{% block page_title %}My Cards{% endblock %}
+
+{% block content %}
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for card in cards %}
+        <tr>
+            <td>{{ card.name }}</td>
+            <td>{{ card.description }}</td>
+            <td>
+                <a href="{% url 'cards:card_update' card.pk %}">Edit</a>
+                <a href="{% url 'cards:card_delete' card.pk %}">Delete</a>
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="3">You have not created any cards.</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,100 @@
+
+{% extends "base.html" %}
+
+{% block title %}All Cards{% endblock %}
+
+{% block page_title %}Database of All Cards{% endblock %}
+
+{% block page_description %}
+View all the cards available for the different AI tools.
+{% endblock %}
+
+{% block content %}
+
+<div class="cards-layout">
+    <aside class="cards-sidebar">
+        <h2>Filter Cards</h2>
+        <form method="get">
+            <input
+                type="search"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Search..."
+            >
+
+            <h3>Category</h3>
+
+            <label>
+                <input
+                    type="checkbox"
+                    name="category"
+                    value="agent"
+                    {% if "agent" in selected_categories %}checked{% endif %}
+                >
+                Agent
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    name="category"
+                    value="mcp_server"
+                    {% if "mcp_server" in selected_categories %}checked{% endif %}
+                >
+                MCP Server
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    name="category"
+                    value="skills_md"
+                    {% if "skills_md" in selected_categories %}checked{% endif %}
+                >
+                Skills MD
+            </label>
+
+            <button type="submit">Apply filters</button>
+            <a href="{% url 'cards:card_all' %}">Clear</a>
+        </form>
+    </aside>
+
+    <div class="cards-table">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Logo URL</th>
+                <th>Owner</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+
+            {% for card in cards %}
+                <tr>
+                    <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.id }}</a></td>
+                    <td>{{ card.name }}</td>
+                    <td>{{ card.description }}</td>
+                    <td>{{ card.logo_url }}</td>
+                    <td>{{ card.owner }}</td>
+                    {% if user == card.owner %}
+                        <td><a href="{% url 'cards:card_update' card.pk %}">Edit</a></td>
+                        <td><a href="{% url 'cards:card_delete' card.pk %}">Delete</a></td>
+                    {% else %}
+                        <td>N/A</td>
+                        <td>N/A</td>
+                    {% endif %}
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No cards found.</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+
+
+{% endblock %}

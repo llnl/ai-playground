@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Trending Cards{% endblock %}
+
+{% block page_title %}Database of Trending Cards{% endblock %}
+
+{% block page_description %}
+View all the trending cards.
+{% endblock %}
+
+{% block content %}
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Logo URL</th>
+        <th>Owner</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+
+    {% for card in cards %}
+        <tr>
+            <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.id }}</a></td>
+            <td>{{ card.name }}</td>
+            <td>{{ card.description }}</td>
+            <td>{{ card.logo_url }}</td>
+            <td>{{ card.owner }}</td>
+            {% if user == card.owner %}
+                <td><a href="{% url 'cards:card_update' card.pk %}">Edit</a></td>
+                <td><a href="{% url 'cards:card_delete' card.pk %}">Delete</a></td>
+            {% else %}
+                <td>N/A</td>
+                <td>N/A</td>
+            {% endif %}
+        <td>Clicks: {{ card.total_clicks }}</td>
+        <td>Impressions: {{ card.total_impressions }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="4">No cards found.</td>
+        </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

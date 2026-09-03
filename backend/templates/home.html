@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Home | AI Playground{% endblock %}
+
+{% block content %}
+
+<div>
+
+    <h2>Find the right AI resource</h2>
+
+    <div class="card-grid">
+        <a class="card-tile" href="{% url 'cards:card_mcp_servers'%}">
+            <img src="{% static 'images/mcp-server.svg' %}" alt="">
+            <h2>MCP Servers</h2>
+            <p>Connect AI assistants to trusted DOE data and services.</p>
+            <br>
+            <p>Explore servers →</p>
+        </a>
+
+        <a class="card-tile" href="{% url 'cards:card_agents'%}">
+            <img src="{% static 'images/agents.svg' %}" alt="">
+            <h2>Agents</h2>
+            <p>Discover autonomous helpers built for specialized tasks.</p>
+            <br>
+            <p>Explore agents →</p>
+        </a>
+
+        <a class="card-tile" href="{% url 'cards:card_skills'%}">
+            <img src="{% static 'images/skills.svg' %}" alt="">
+            <h2>Skills</h2>
+            <p>Find reusable capablities that extend AI systems.</p>
+            <br>
+            <p>Explore skills →</p>
+        </a>
+
+        <a class="card-tile" href="{% url 'cards:card_all'%}">
+            <img src="{% static 'images/tools.svg' %}" alt="">
+            <h2>Other AI Tools</h2>
+            <p>Browse emerging resources across the DOE ecosystem.</p>
+            <br>
+            <p>Explore tooling →</p>
+        </a>
+    </div>
+
+</div>
+
+<div class="widget-grid">
+    <div>
+        <h2>Make AI tooling visible and accessible</h2>
+        <p>AI Playground connects people with the projects and systems where AI tooling is created, stored, and managed, including MADA and URSA.</p>
+        <a href="#" class="button-link">Register your tool</a>
+    </div>
+
+    {% include "cards/partials/stats_widget.html" %}
+
+</div>
+
+{% endblock %}

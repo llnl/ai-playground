@@ -1,0 +1,21 @@
+# Python packaging artifacts
+*.egg-info/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*.tmp
+
+# Project-wide environment files
+.env
+.env.*
+!.env.example
+uv.lock
