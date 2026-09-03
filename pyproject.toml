@@ -71,6 +71,20 @@ all = ["ai_playground[docs, tests]"]
 
 [tool.ruff]
 line-length = 120
+exclude = [
+    "**/migrations/*.py",
+]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "W", "S"]
+select = [
+    "E",
+    "F",
+    "I",
+    "W",
+    "S",
+    "D",
+    "DOC"
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

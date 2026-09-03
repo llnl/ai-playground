@@ -5,24 +5,28 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cards', '0002_cards_owner'),
+        ("cards", "0002_cards_owner"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CardMetrics',
+            name="CardMetrics",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField()),
-                ('impressions', models.PositiveIntegerField(default=0)),
-                ('clicks', models.PositiveIntegerField(default=0)),
-                ('card', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='metrics', to='cards.cards')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("date", models.DateField()),
+                ("impressions", models.PositiveIntegerField(default=0)),
+                ("clicks", models.PositiveIntegerField(default=0)),
+                (
+                    "card",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, related_name="metrics", to="cards.cards"
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-date'],
-                'constraints': [models.UniqueConstraint(fields=('card', 'date'), name='unique_card_metric_per_day')],
+                "ordering": ["-date"],
+                "constraints": [models.UniqueConstraint(fields=("card", "date"), name="unique_card_metric_per_day")],
             },
         ),
     ]

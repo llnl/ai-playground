@@ -1,16 +1,23 @@
+"""Cards app databae tables (models). It houses the Cards and CardMetrics models."""
+
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
-from django.conf import settings
+
 
 # Create your models here.
 class Cards(models.Model):
+    """Store an MCP Server, Agent, SKILL.md, etc... card.
+
+    Each row represents a specific card.
+    """
 
     # Default user database from Django so we can see who created it later
-    owner = models.ForeignKey( # many-to-one relationship. Each card has one owner, while one user can own many cards.
+    owner = models.ForeignKey(  # many-to-one relationship. Each card has one owner, while one user can own many cards.
         settings.AUTH_USER_MODEL,  # built in django user database
-        on_delete=models.SET_NULL, # in case user gets deleted, card will still be here.
-        null=True, # just in case user gets deleted but still gets filled out on creation
-        blank=True, # just in case user gets deleted but still gets filled out on creation
+        on_delete=models.SET_NULL,  # in case user gets deleted, card will still be here.
+        null=True,  # just in case user gets deleted but still gets filled out on creation
+        blank=True,  # just in case user gets deleted but still gets filled out on creation
         related_name="cards",  # reverse relationship lookup from user database to cards database
     )
 
@@ -26,6 +33,8 @@ class Cards(models.Model):
     institution = models.CharField(max_length=200, blank=True)
 
     class Category(models.TextChoices):
+        """Available categories for a card."""
+
         MCP_SERVER = "mcp_server", "MCP Server"
         AGENT = "agent", "Agent"
         SKILLS_MD = "skills_md", "Skills.md"
@@ -62,31 +71,33 @@ class Cards(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        """Return a readable description of a database row."""
         return self.name
 
-    # This gets called after a row in the database is created succesfully
-    # We send it to the card_detail url view based on its primary key
     def get_absolute_url(self):
-        return reverse(
-            "cards:card_detail",
-            kwargs={"pk": self.pk}
-        )
+        """Return the URL for this card's detail page after CardCreateView validates form."""
+        return reverse("cards:card_detail", kwargs={"pk": self.pk})
 
 
-# keep track of impressions (showed up in search results) and clicks (went to card detail)
-# on a per day status
 class CardMetrics(models.Model):
+    """Store daily impression and click metrics for a card.
+
+    Each row represents a specific card with a daily date.
+    Impressions and clicks are incremented on that row for that day.
+    """
+
     card = models.ForeignKey(
         Cards,
         on_delete=models.CASCADE,
         related_name="metrics",
     )
     date = models.DateField()
-    impressions = models.PositiveIntegerField(default=0)
-    clicks = models.PositiveIntegerField(default=0)
+    impressions = models.PositiveIntegerField(default=0)  # Show up during a search result
+    clicks = models.PositiveIntegerField(default=0)  # Click on card detail page
 
-    # makes it so each card can only get one row per day and increments that row with impressions and clicks
     class Meta:
+        """Configure uniqueness and default ordering for card metrics."""
+
         constraints = [
             models.UniqueConstraint(
                 fields=["card", "date"],
@@ -95,5 +106,6 @@ class CardMetrics(models.Model):
         ]
         ordering = ["-date"]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return a readable description of a database row."""
         return f"{self.card.name} - {self.date}"

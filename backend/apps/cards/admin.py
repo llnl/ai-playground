@@ -1,6 +1,8 @@
+"""Register card-related models with the Django admin site."""
+
 from django.contrib import admin
 
-# Register your models here.
-from .models import Cards
+from .models import CardMetrics, Cards
 
+admin.site.register(CardMetrics)
 admin.site.register(Cards)
