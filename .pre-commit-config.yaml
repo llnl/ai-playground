@@ -26,3 +26,24 @@ repos:
       - id: ruff-format
         args: [--check, --diff]
         name: ruff format --check --diff >> Fix issues with `ruff format .` from the top of the repo.
+
+  - repo: https://github.com/aufdenpunkt/pre-commit-js-beautify
+    rev: 1.13.0
+    hooks:
+      - id: js-beautify
+        name: js-beautify format HTML
+        types: [html]
+        files: \.html$
+        args:
+          - --indent-size=4
+          - --end-with-newline
+          - --wrap-line-length=120
+
+      - id: js-beautify
+        name: js-beautify format CSS
+        types: [css]
+        files: \.css$
+        args:
+          - --indent-size=2
+          - --end-with-newline
+          - --wrap-line-length=120

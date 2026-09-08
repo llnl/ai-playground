@@ -4,18 +4,36 @@
         LIVE
     </span>
 
-    <div class="stat-card">
-        <span>Total Cards</span>
-        <strong>{{ total_cards }}</strong>
+    <div class="stats-widget__rows">
+        <div class="stats-widget__row">
+            <div class="stat-card">
+                <span>Total Cards</span>
+                <strong>{{ total_cards }}</strong>
+            </div>
+            <div class="stat-card">
+                <span>Unique Categories</span>
+                <strong>{{ unique_categories }}</strong>
+            </div>
+            <div class="stat-card">
+                <span>Unique Institutions</span>
+                <strong>{{ unique_institutions }}</strong>
+            </div>
+        </div>
+
+        <div class="stats-widget__row">
+            <div class="stat-card">
+                <span>Total MCP Servers</span>
+                <strong>{{ total_mcp_servers }}</strong>
+            </div>
+            <div class="stat-card">
+                <span>Total Agents</span>
+                <strong>{{ total_agents }}</strong>
+            </div>
+            <div class="stat-card">
+                <span>Total SKILLS.md</span>
+                <strong>{{ total_skills_md }}</strong>
+            </div>
+        </div>
     </div>
 
-    <div class="stat-card">
-        <span>Unique Categories</span>
-        <strong>{{ unique_categories }}</strong>
-    </div>
-
-    <div class="stat-card">
-        <span>Unique Institutions</span>
-        <strong>{{ unique_institutions }}</strong>
-    </div>
 </div>

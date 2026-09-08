@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}All Cards{% endblock %}
@@ -15,42 +14,25 @@ View all the cards available for the different AI tools.
     <aside class="cards-sidebar">
         <h2>Filter Cards</h2>
         <form method="get">
-            <input
-                type="search"
-                name="q"
-                value="{{ search_query }}"
-                placeholder="Search..."
-            >
+            <input aria-label="Search cards" type="search" name="q" value="{{ search_query }}" placeholder="Search...">
 
             <h3>Category</h3>
 
             <label>
-                <input
-                    type="checkbox"
-                    name="category"
-                    value="agent"
-                    {% if "agent" in selected_categories %}checked{% endif %}
-                >
+                <input type="checkbox" name="category" value="agent"
+                    {% if "agent" in selected_categories %}checked{% endif %}>
                 Agent
             </label>
 
             <label>
-                <input
-                    type="checkbox"
-                    name="category"
-                    value="mcp_server"
-                    {% if "mcp_server" in selected_categories %}checked{% endif %}
-                >
+                <input type="checkbox" name="category" value="mcp_server"
+                    {% if "mcp_server" in selected_categories %}checked{% endif %}>
                 MCP Server
             </label>
 
             <label>
-                <input
-                    type="checkbox"
-                    name="category"
-                    value="skills_md"
-                    {% if "skills_md" in selected_categories %}checked{% endif %}
-                >
+                <input type="checkbox" name="category" value="skills_md"
+                    {% if "skills_md" in selected_categories %}checked{% endif %}>
                 Skills MD
             </label>
 
@@ -72,24 +54,32 @@ View all the cards available for the different AI tools.
             </tr>
 
             {% for card in cards %}
-                <tr>
-                    <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.id }}</a></td>
-                    <td>{{ card.name }}</td>
-                    <td>{{ card.description }}</td>
-                    <td>{{ card.logo_url }}</td>
-                    <td>{{ card.owner }}</td>
-                    {% if user == card.owner %}
-                        <td><a href="{% url 'cards:card_update' card.pk %}">Edit</a></td>
-                        <td><a href="{% url 'cards:card_delete' card.pk %}">Delete</a></td>
-                    {% else %}
-                        <td>N/A</td>
-                        <td>N/A</td>
-                    {% endif %}
-                </tr>
+            <tr>
+                <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.id }}</a></td>
+                <td>{{ card.name }}</td>
+                <td>{{ card.description }}</td>
+                <td>{{ card.logo_url }}</td>
+                <td>{{ card.owner }}</td>
+                {% if user == card.owner or user.is_staff or user.is_superuser %}
+                <td>
+                    <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
+                        <button class="table-action" type="submit">Edit</button>
+                    </form>
+                </td>
+                <td>
+                    <form class="table-action-form" method="get" action="{% url 'cards:card_delete' card.pk %}">
+                        <button class="table-action table-action--danger" type="submit">Delete</button>
+                    </form>
+                </td>
+                {% else %}
+                <td><button class="table-action table-action--disabled" type="button" disabled>Edit</button></td>
+                <td><button class="table-action table-action--disabled" type="button" disabled>Delete</button></td>
+                {% endif %}
+            </tr>
             {% empty %}
-                <tr>
-                    <td colspan="4">No cards found.</td>
-                </tr>
+            <tr>
+                <td colspan="4">No cards found.</td>
+            </tr>
             {% endfor %}
         </table>
     </div>

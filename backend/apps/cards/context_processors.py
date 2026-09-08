@@ -26,4 +26,7 @@ def card_stats(request: HttpRequest) -> dict[str, Any]:
         "total_cards": cards.count(),
         "unique_categories": (cards.exclude(category="").values("category").distinct().count()),
         "unique_institutions": (cards.exclude(institution="").values("institution").distinct().count()),
+        "total_mcp_servers": (cards.filter(category="mcp_server").count()),
+        "total_agents": (cards.filter(category="agent").count()),
+        "total_skills_md": (cards.filter(category="skills_md").count()),
     }

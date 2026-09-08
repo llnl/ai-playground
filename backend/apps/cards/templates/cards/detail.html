@@ -10,14 +10,47 @@
 
 {% block content %}
 
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Description</th>
-        <th>Logo URL</th>
-    </tr>
-
-</table>
+<article class="detail-card">
+    <div>
+        <p class="eyebrow">{{ card.get_category_display|default:"AI resource" }}</p>
+        <h2>About this resource</h2>
+        <p>{{ card.description }}</p>
+        <dl class="detail-list">
+            {% if card.institution %}<div>
+                <dt>Institution</dt>
+                <dd>{{ card.institution }}</dd>
+            </div>{% endif %}
+            {% if card.maintainers %}<div>
+                <dt>Maintainers</dt>
+                <dd>{% for maintainer in card.maintainers %}{{ maintainer }}{% if not forloop.last %},
+                    {% endif %}{% endfor %}</dd>
+            </div>{% endif %}
+            {% if card.tags %}<div>
+                <dt>Tags</dt>
+                <dd>{% for tag in card.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</dd>
+            </div>{% endif %}
+            {% if card.documentation_url %}<div>
+                <dt>Documentation</dt>
+                <dd><a href="{{ card.documentation_url }}" target="_blank" rel="noopener">Open documentation ↗</a></dd>
+            </div>{% endif %}
+            {% if card.external_url %}<div>
+                <dt>External link</dt>
+                <dd><a href="{{ card.external_url }}" target="_blank" rel="noopener">Visit resource ↗</a></dd>
+            </div>{% endif %}
+        </dl>
+        <div class="form-actions">
+            <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Back to directory</a>
+            {% if user == card.owner or user.is_staff or user.is_superuser %}
+            <a class="button-link" href="{% url 'cards:card_update' card.pk %}">Update resource</a>
+            <a class="button-link button-link--danger" href="{% url 'cards:card_delete' card.pk %}">Delete resource</a>
+            {% else %}
+            <span class="button-link button-link--disabled" aria-disabled="true">Update resource</span>
+            <span class="button-link button-link--disabled" aria-disabled="true">Delete resource</span>
+            {% endif %}
+        </div>
+    </div>
+    {% if card.logo_url %}<div class="detail-card__logo"><img src="{{ card.logo_url }}" alt="{{ card.name }} logo">
+    </div>{% endif %}
+</article>
 
 {% endblock %}

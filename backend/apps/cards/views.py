@@ -76,7 +76,10 @@ class CardUpdateView(generic.UpdateView):  # gives permissions to only filters b
         Returns:
             QuerySet: Cards belonging to the authenticated user.
         """
-        return Cards.objects.filter(owner=self.request.user)
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Cards.objects.all()
+        return Cards.objects.filter(owner=user)
 
 
 # class CardDeleteView(LoginRequiredMixin, generic.DeleteView):  # gives permissions to only filters below
@@ -96,7 +99,10 @@ class CardDeleteView(generic.DeleteView):  # gives permissions to only filters b
         Returns:
             QuerySet: Cards belonging to the authenticated user.
         """
-        return Cards.objects.filter(owner=self.request.user)
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Cards.objects.all()
+        return Cards.objects.filter(owner=user)
 
 
 # class CardAllView(LoginRequiredMixin, generic.ListView):  # Listview automatically grabs all rows from database
@@ -258,7 +264,10 @@ class MyCardListView(generic.ListView):
         Returns:
             QuerySet: Cards belonging to the authenticated user.
         """
-        return Cards.objects.filter(owner=self.request.user)
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return Cards.objects.all()
+        return Cards.objects.filter(owner=user)
 
 
 class CardTrendingView(generic.ListView):

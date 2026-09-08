@@ -4,26 +4,34 @@
 {% block page_title %}My Cards{% endblock %}
 
 {% block content %}
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Description</th>
-        <th>Actions</th>
-    </tr>
+<div class="cards-table">
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
 
-    {% for card in cards %}
+        {% for card in cards %}
         <tr>
             <td>{{ card.name }}</td>
             <td>{{ card.description }}</td>
             <td>
-                <a href="{% url 'cards:card_update' card.pk %}">Edit</a>
-                <a href="{% url 'cards:card_delete' card.pk %}">Delete</a>
+                <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
+                    <button class="table-action" type="submit">Edit</button>
+                </form>
+            </td>
+            <td>
+                <form class="table-action-form" method="get" action="{% url 'cards:card_delete' card.pk %}">
+                    <button class="table-action table-action--danger" type="submit">Delete</button>
+                </form>
             </td>
         </tr>
-    {% empty %}
+        {% empty %}
         <tr>
             <td colspan="3">You have not created any cards.</td>
         </tr>
-    {% endfor %}
-</table>
+        {% endfor %}
+    </table>
+</div>
 {% endblock %}

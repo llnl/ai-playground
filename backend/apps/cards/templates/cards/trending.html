@@ -10,39 +10,51 @@ View all the trending cards.
 
 {% block content %}
 
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Description</th>
-        <th>Logo URL</th>
-        <th>Owner</th>
-        <th>Edit</th>
-        <th>Delete</th>
-    </tr>
+<div class="cards-table">
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Logo URL</th>
+            <th>Owner</th>
+            <th>Edit</th>
+            <th>Delete</th>
+            <th>Clicks</th>
+            <th>Impressions</th>
+        </tr>
 
-    {% for card in cards %}
+        {% for card in cards %}
         <tr>
             <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.id }}</a></td>
             <td>{{ card.name }}</td>
             <td>{{ card.description }}</td>
             <td>{{ card.logo_url }}</td>
             <td>{{ card.owner }}</td>
-            {% if user == card.owner %}
-                <td><a href="{% url 'cards:card_update' card.pk %}">Edit</a></td>
-                <td><a href="{% url 'cards:card_delete' card.pk %}">Delete</a></td>
+            {% if user == card.owner or user.is_staff or user.is_superuser %}
+            <td>
+                <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
+                    <button class="table-action" type="submit">Edit</button>
+                </form>
+            </td>
+            <td>
+                <form class="table-action-form" method="get" action="{% url 'cards:card_delete' card.pk %}">
+                    <button class="table-action table-action--danger" type="submit">Delete</button>
+                </form>
+            </td>
             {% else %}
-                <td>N/A</td>
-                <td>N/A</td>
+            <td><button class="table-action table-action--disabled" type="button" disabled>Edit</button></td>
+            <td><button class="table-action table-action--disabled" type="button" disabled>Delete</button></td>
             {% endif %}
-        <td>Clicks: {{ card.total_clicks }}</td>
-        <td>Impressions: {{ card.total_impressions }}</td>
+            <td>{{ card.total_clicks|default:0 }}</td>
+            <td>{{ card.total_impressions|default:0 }}</td>
         </tr>
-    {% empty %}
+        {% empty %}
         <tr>
             <td colspan="4">No cards found.</td>
         </tr>
-    {% endfor %}
-</table>
+        {% endfor %}
+    </table>
+</div>
 
 {% endblock %}

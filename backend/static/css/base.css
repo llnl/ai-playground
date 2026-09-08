@@ -1,15 +1,381 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --ink: #102a43;
+  --muted: #5b6f82;
+  --line: #d9e3eb;
+  --surface: #fff;
+  --canvas: #f4f8fa;
+  --teal: #087e8b;
+  --teal-dark: #05606b;
+  --accent: #f5b841;
+  --danger: #bc3c3c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 html,
 body {
-    min-height: 100%;
-    margin: 0;
+  min-height: 100%;
+  margin: 0;
 }
 
 body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  background: var(--canvas);
+  font-family: "Manrope", Arial, sans-serif;
+  line-height: 1.55;
 }
 
 main {
-    flex: 1;
+  flex: 1;
+}
+
+a {
+  color: var(--teal-dark);
+  font-weight: 700;
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+.site-main {
+  width: min(1200px, calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 3.5rem 0 4.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 .55rem;
+  color: var(--teal);
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.button-link,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  border: 0;
+  border-radius: .5rem;
+  padding: .8rem 1.1rem;
+  color: #fff;
+  background: var(--teal);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+
+.button-link:hover,
+button:hover {
+  color: #fff;
+  background: var(--teal-dark);
+  transform: translateY(-1px);
+}
+
+.button-link--danger,
+.button-danger {
+  background: var(--danger);
+}
+
+.button-link--disabled {
+  color: #778896;
+  background: #e2e8ec;
+  cursor: not-allowed;
+}
+
+.button-link--disabled:hover {
+  color: #778896;
+  background: #e2e8ec;
+  transform: none;
+}
+
+.button-link--secondary {
+  color: var(--ink);
+  background: #e7eef2;
+}
+
+.button-link--secondary:hover {
+  color: var(--ink);
+  background: #d8e4ea;
+}
+
+@media (max-width: 640px) {
+  .site-main {
+    width: min(100% - 2rem, 1200px);
+    padding: 2.25rem 0 3rem;
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  background: var(--surface);
+  box-shadow: 0 4px 14px rgba(16, 42, 67, .04);
+}
+
+th,
+td {
+  padding: .9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: #456075;
+  background: #edf4f6;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+td {
+  font-size: .9rem;
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+tbody tr:hover {
+  background: #f8fbfc;
+}
+
+.table-action-form {
+  margin: 0;
+}
+
+.table-action {
+  display: inline-block;
+  padding: .35rem .65rem;
+  border: 1px solid #9fc9cd;
+  border-radius: .35rem;
+  color: var(--teal-dark);
+  background: #f2fbfb;
+  font-size: .8rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.table-action:hover {
+  color: var(--teal-dark);
+  background: #e4f3f2;
+}
+
+.table-action--danger {
+  border-color: #e2aaaa;
+  color: var(--danger);
+  background: #fff7f7;
+}
+
+.table-action--danger:hover {
+  background: #fbe9e9;
+  color: #8d2929;
+}
+
+.table-action--disabled,
+.table-action:disabled {
+  border-color: #dce3e7;
+  color: #93a1ac;
+  background: #eef2f4;
+  cursor: not-allowed;
+}
+
+.table-action--disabled:hover,
+.table-action:disabled:hover {
+  color: #93a1ac;
+  background: #eef2f4;
+  transform: none;
+}
+
+.cards-table {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.cards-sidebar h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.cards-sidebar h3 {
+  margin: 1.35rem 0 .5rem;
+  font-size: .82rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.cards-sidebar input[type="search"],
+.cards-sidebar label {
+  width: 100%;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: .72rem .8rem;
+  border: 1px solid #bfcfd9;
+  border-radius: .45rem;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 3px solid rgba(8, 126, 139, .18);
+  border-color: var(--teal);
+}
+
+input[type="checkbox"] {
+  width: auto;
+  margin-right: .45rem;
+  accent-color: var(--teal);
+}
+
+.cards-sidebar form>button {
+  width: 100%;
+  margin-top: .85rem;
+}
+
+.cards-sidebar form>a {
+  display: block;
+  margin-top: .8rem;
+  font-size: .85rem;
+  text-align: center;
+}
+
+.form-card,
+.detail-card,
+.confirmation-card {
+  max-width: 780px;
+  padding: 2rem;
+  border: 1px solid var(--line);
+  border-radius: .9rem;
+  background: var(--surface);
+  box-shadow: 0 8px 20px rgba(16, 42, 67, .05);
+}
+
+.form-card p {
+  margin: 0 0 1.2rem;
+}
+
+.form-card label {
+  display: block;
+  margin-bottom: .4rem;
+  color: #365267;
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.form-card .helptext {
+  display: block;
+  margin-top: .35rem;
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+.form-card ul.errorlist {
+  margin: .35rem 0;
+  padding: 0;
+  color: var(--danger);
+  font-size: .84rem;
+  list-style: none;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 1.5rem;
+}
+
+.detail-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 2rem;
+}
+
+.detail-card h2 {
+  margin-top: 0;
+}
+
+.detail-card__logo {
+  display: grid;
+  min-height: 150px;
+  place-items: center;
+  border-radius: .7rem;
+  background: #edf4f6;
+}
+
+.detail-card__logo img {
+  max-width: 130px;
+  max-height: 130px;
+  object-fit: contain;
+}
+
+.detail-list {
+  margin: 1.5rem 0 0;
+}
+
+.detail-list div {
+  padding: .85rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.detail-list dt {
+  margin-bottom: .22rem;
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.detail-list dd {
+  margin: 0;
+}
+
+.tag {
+  display: inline-block;
+  margin: .15rem .25rem .15rem 0;
+  padding: .23rem .5rem;
+  border-radius: 999px;
+  color: #12636c;
+  background: #e4f3f2;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.confirmation-card {
+  max-width: 580px;
+}
+
+@media (max-width: 680px) {
+  .detail-card {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-card__logo {
+    min-height: 105px;
+  }
 }

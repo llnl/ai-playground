@@ -27,7 +27,7 @@ urlpatterns = [
     # These URLs use the primary key <int:pk> meaning each datatable entry will have its own url
     #
     # /apps/cards/1/ View detailed information about a card
-    path("/apps/cards/<int:pk>/", views.CardDetailView.as_view(), name="card_detail"),
+    path("<int:pk>/detail", views.CardDetailView.as_view(), name="card_detail"),
     # /apps/cards/1/ View form to update card
     path("<int:pk>/update/", views.CardUpdateView.as_view(), name="card_update"),
     # /apps/cards/1/ View to delete card

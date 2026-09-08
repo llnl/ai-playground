@@ -14,11 +14,15 @@
     {% include "components/header.html" %}
 
     <section class="page-header">
-        <h1>{% block page_title %}Welcome to AI Playground{% endblock %}</h1>
-        <p>{% block page_description %}Explore AI tools, agents, skills, and MCP servers.{% endblock %}</p>
+        <div class="page-header__inner">
+            <p class="eyebrow">AI resource directory</p>
+            <h1>{% block page_title %}Welcome to AI Playground{% endblock %}</h1>
+            <p class="page-header__description">{% block page_description %}Explore AI tools, agents, skills, and MCP
+                servers.{% endblock %}</p>
+        </div>
     </section>
 
-    <main>
+    <main class="site-main">
         {% block content %}{% endblock %}
     </main>
 

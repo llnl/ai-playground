@@ -10,12 +10,13 @@ Confirm that you want to delete this card.
 
 {% block content %}
 
-<p>Are you sure you want to delete "{{ card.name }}"?</p>
-
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Yes, delete</button>
-    <a href="{% url 'cards:card_detail' card.pk %}">Cancel</a>
-</form>
+<div class="confirmation-card">
+    <p>Are you sure you want to permanently delete <strong>"{{ card.name }}"</strong>?</p>
+    <form method="post" class="form-actions">
+        {% csrf_token %}
+        <button class="button-danger" type="submit">Yes, delete</button>
+        <a class="button-link button-link--secondary" href="{% url 'cards:card_detail' card.pk %}">Cancel</a>
+    </form>
+</div>
 
 {% endblock %}
