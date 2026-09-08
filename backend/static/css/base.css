@@ -370,6 +370,19 @@ input[type="checkbox"] {
   max-width: 580px;
 }
 
+.official-check {
+  display: inline-grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #198754;
+  font-size: .82rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 @media (max-width: 680px) {
   .detail-card {
     grid-template-columns: 1fr;

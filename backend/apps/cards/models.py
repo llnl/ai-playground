@@ -32,6 +32,8 @@ class Cards(models.Model):
 
     institution = models.CharField(max_length=200, blank=True)
 
+    from_official_team = models.BooleanField(default=False)
+
     class Category(models.TextChoices):
         """Available categories for a card."""
 

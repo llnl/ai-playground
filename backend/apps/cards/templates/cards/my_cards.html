@@ -9,6 +9,7 @@
         <tr>
             <th>Name</th>
             <th>Description</th>
+            <th>Official</th>
             <th>Actions</th>
         </tr>
 
@@ -16,6 +17,8 @@
         <tr>
             <td>{{ card.name }}</td>
             <td>{{ card.description }}</td>
+            <td>{% if card.from_official_team %}<span class="official-check" title="Official team resource"
+                    aria-label="Official team resource">✓</span>{% endif %}</td>
             <td>
                 <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
                     <button class="table-action" type="submit">Edit</button>
@@ -29,7 +32,7 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="3">You have not created any cards.</td>
+            <td colspan="4">You have not created any cards.</td>
         </tr>
         {% endfor %}
     </table>

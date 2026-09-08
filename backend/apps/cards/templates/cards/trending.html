@@ -18,6 +18,7 @@ View all the trending cards.
             <th>Description</th>
             <th>Logo URL</th>
             <th>Owner</th>
+            <th>Official</th>
             <th>Edit</th>
             <th>Delete</th>
             <th>Clicks</th>
@@ -31,6 +32,8 @@ View all the trending cards.
             <td>{{ card.description }}</td>
             <td>{{ card.logo_url }}</td>
             <td>{{ card.owner }}</td>
+            <td>{% if card.from_official_team %}<span class="official-check" title="Official team resource"
+                    aria-label="Official team resource">✓</span>{% endif %}</td>
             {% if user == card.owner or user.is_staff or user.is_superuser %}
             <td>
                 <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
@@ -51,7 +54,7 @@ View all the trending cards.
         </tr>
         {% empty %}
         <tr>
-            <td colspan="4">No cards found.</td>
+            <td colspan="10">No cards found.</td>
         </tr>
         {% endfor %}
     </table>
