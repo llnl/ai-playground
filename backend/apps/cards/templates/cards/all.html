@@ -1,11 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}All Cards{% endblock %}
+{% block title %}
+    {% if owner_filter == "me" %}
+        My Cards
+    {% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+        MCP Server Cards
+    {% elif selected_categories|length == 1 and "agent" in selected_categories %}
+        Agent Cards
+    {% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+        Skills.md Cards
+    {% elif trending == "true" %}
+        Trending Cards
+    {% else %}
+        All Cards
+    {% endif %}
+{% endblock %}
 
-{% block page_title %}Database of All Cards{% endblock %}
+{% block page_title %}
+    {% if owner_filter == "me" %}
+        Database of My Cards
+    {% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+        Database of MCP Server Cards
+    {% elif selected_categories|length == 1 and "agent" in selected_categories %}
+        Database of Agent Cards
+    {% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+        Database of Skills.md Cards
+    {% elif trending == "true" %}
+        Database of Trending Cards
+    {% else %}
+        Database of All Cards
+    {% endif %}
+{% endblock %}
 
 {% block page_description %}
-View all the cards available for the different AI tools.
+    {% if owner_filter == "me" %}
+        View all the cards created by you.
+    {% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+        View all the cards available for MCP Servers.
+    {% elif selected_categories|length == 1 and "agent" in selected_categories %}
+        View all the cards available for Agents.
+    {% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+        View all the cards available for Skills.md.
+    {% elif trending == "true" %}
+        View all the cards that are trending.
+    {% else %}
+        View all the cards available for the different AI tools.
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -14,15 +54,9 @@ View all the cards available for the different AI tools.
     <aside class="cards-sidebar">
         <h2>Filter Cards</h2>
         <form method="get">
-            <input aria-label="Search cards" type="search" name="q" value="{{ search_query }}" placeholder="Search...">
+            <input aria-label="Search cards" type="search" name="query" value="{{ search_query }}" placeholder="Search...">
 
             <h3>Category</h3>
-
-            <label>
-                <input type="checkbox" name="category" value="agent"
-                    {% if "agent" in selected_categories %}checked{% endif %}>
-                Agent
-            </label>
 
             <label>
                 <input type="checkbox" name="category" value="mcp_server"
@@ -31,11 +65,23 @@ View all the cards available for the different AI tools.
             </label>
 
             <label>
+                <input type="checkbox" name="category" value="agent"
+                    {% if "agent" in selected_categories %}checked{% endif %}>
+                Agent
+            </label>
+
+            <label>
                 <input type="checkbox" name="category" value="skills_md"
                     {% if "skills_md" in selected_categories %}checked{% endif %}>
                 Skills MD
             </label>
 
+            {% if owner_filter %}
+            <input type="hidden" name="owner" value="{{ owner_filter }}">
+            {% endif %}
+            {% if trending == "true" %}
+            <input type="hidden" name="trending" value="true">
+            {% endif %}
             <button type="submit">Apply filters</button>
             <a href="{% url 'cards:card_all' %}">Clear</a>
         </form>
@@ -52,6 +98,10 @@ View all the cards available for the different AI tools.
                 <th>Official</th>
                 <th>Edit</th>
                 <th>Delete</th>
+                {% if trending  == "true" %}
+                <th>Clicks</th>
+                <th>Impressions</th>
+                {% endif %}
             </tr>
 
             {% for card in cards %}
@@ -77,6 +127,10 @@ View all the cards available for the different AI tools.
                 {% else %}
                 <td><button class="table-action table-action--disabled" type="button" disabled>Edit</button></td>
                 <td><button class="table-action table-action--disabled" type="button" disabled>Delete</button></td>
+                {% endif %}
+                {% if trending  == "true" %}
+                <td>{{ card.total_clicks|default:0 }}</td>
+                <td>{{ card.total_impressions|default:0 }}</td>
                 {% endif %}
             </tr>
             {% empty %}

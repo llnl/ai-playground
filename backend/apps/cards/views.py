@@ -3,8 +3,10 @@
 from datetime import timedelta
 from typing import Any
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import F, Q, QuerySet, Sum
+from django.db.models import F, Q, QuerySet, Sum, Value
+from django.db.models.functions import Coalesce
 from django.forms import ModelForm
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse_lazy
@@ -15,9 +17,7 @@ from .forms import CardForm
 from .models import CardMetrics, Cards
 
 
-# from django.contrib.auth.mixins import LoginRequiredMixin
-# class CardCreateView(LoginRequiredMixin, generic.CreateView):  # assigning user means logging in
-class CardCreateView(generic.CreateView):
+class CardCreateView(LoginRequiredMixin, generic.CreateView):
     """Create a new card and assign it to the authenticated user."""
 
     model = Cards
@@ -31,8 +31,7 @@ class CardCreateView(generic.CreateView):
         return super().form_valid(form)
 
 
-# class CardDetailView(LoginRequiredMixin, generic.DetailView):  # DtailView shows one primary_key at a time
-class CardDetailView(generic.DetailView):  # DtailView shows one primary_key at a time
+class CardDetailView(LoginRequiredMixin, generic.DetailView):
     """Display a card's details and record a daily click."""
 
     model = Cards
@@ -59,8 +58,7 @@ class CardDetailView(generic.DetailView):  # DtailView shows one primary_key at 
         return response
 
 
-# class CardUpdateView(LoginRequiredMixin, generic.UpdateView):  # gives permissions to only filters below
-class CardUpdateView(generic.UpdateView):  # gives permissions to only filters below
+class CardUpdateView(LoginRequiredMixin, generic.UpdateView):  # gives permissions to only filters below
     """Allow users to update only cards they own."""
 
     model = Cards
@@ -82,8 +80,7 @@ class CardUpdateView(generic.UpdateView):  # gives permissions to only filters b
         return Cards.objects.filter(owner=user)
 
 
-# class CardDeleteView(LoginRequiredMixin, generic.DeleteView):  # gives permissions to only filters below
-class CardDeleteView(generic.DeleteView):  # gives permissions to only filters below
+class CardDeleteView(LoginRequiredMixin, generic.DeleteView):  # gives permissions to only filters below
     """Allow users to delete only cards they own."""
 
     model = Cards
@@ -105,8 +102,7 @@ class CardDeleteView(generic.DeleteView):  # gives permissions to only filters b
         return Cards.objects.filter(owner=user)
 
 
-# class CardAllView(LoginRequiredMixin, generic.ListView):  # Listview automatically grabs all rows from database
-class CardAllView(generic.ListView):  # Listview automatically grabs all rows from database
+class CardAllView(LoginRequiredMixin, generic.ListView):
     """Display, search, and filter all cards."""
 
     model = Cards
@@ -120,27 +116,61 @@ class CardAllView(generic.ListView):  # Listview automatically grabs all rows fr
         Returns:
             QuerySet: Matching cards ordered by name.
         """
-        queryset = Cards.objects.all()
+        # Logged in user
+        user = self.request.user
 
-        search = self.request.GET.get("q", "").strip()
+        # Blanket query
+        query = self.request.GET.get("query", "").strip()
+
+        # Specific fields
+        owner = self.request.GET.get("owner")
         categories = self.request.GET.getlist("category")
 
+        # Specifically for trending/ url
+        trending = self.request.GET.get("trending") == "true"
+
+        # All data
+        queryset = Cards.objects.all()
+
+        # Specifically for my_cards/ url
+        if owner == "me" and not (user.is_staff or user.is_superuser):
+            queryset = queryset.filter(owner=user)
+
         # These match the model and are a bunch of OR statements
-        if search:
+        if query:
             queryset = queryset.filter(
-                Q(owner__username__icontains=search)
-                | Q(owner__email__icontains=search)
-                | Q(name__icontains=search)
-                | Q(description__icontains=search)
-                | Q(maintainers__icontains=search)
-                | Q(institution__icontains=search)
-                | Q(tags__icontains=search)
+                Q(owner__username__icontains=query)
+                | Q(owner__email__icontains=query)
+                | Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(maintainers__icontains=query)
+                | Q(institution__icontains=query)
+                | Q(tags__icontains=query)
             )
 
         if categories:
             queryset = queryset.filter(category__in=categories)
 
-        return queryset.order_by("name")
+        if trending:
+            start_date = timezone.localdate() - timedelta(days=30)
+
+            queryset = (
+                queryset.filter(metrics__date__gte=start_date)
+                # Annotate creates temporary fields for HTML template to use
+                .annotate(
+                    # Coalesce protects againts Null
+                    total_impressions=Coalesce(Sum("metrics__impressions"), Value(0)),
+                    total_clicks=Coalesce(Sum("metrics__clicks"), Value(0)),
+                )
+                .annotate(  # TODO: Create better trending score
+                    trending_score=F("total_clicks") * 3 + F("total_impressions")
+                )
+                .order_by("-trending_score", "name")
+            )
+        else:
+            queryset.order_by("name")
+
+        return queryset
 
     # Since page refreshes, need values from before in query
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
@@ -154,8 +184,10 @@ class CardAllView(generic.ListView):  # Listview automatically grabs all rows fr
         """
         context = super().get_context_data(**kwargs)
 
-        context["search_query"] = self.request.GET.get("q", "")
+        context["search_query"] = self.request.GET.get("query", "")
         context["selected_categories"] = self.request.GET.getlist("category")
+        context["owner_filter"] = self.request.GET.get("owner", "")
+        context["trending"] = self.request.GET.get("trending")
 
         return context
 
@@ -197,105 +229,3 @@ class CardAllView(generic.ListView):  # Listview automatically grabs all rows fr
             ).update(impressions=F("impressions") + 1)
 
         return super().render_to_response(context, **response_kwargs)
-
-
-# class CardMCPServersView(LoginRequiredMixin, generic.ListView):  # Listview automatically grabs all rows from database
-class CardMCPServersView(generic.ListView):  # Listview automatically grabs all rows from database
-    """Display cards in the MCP Server category."""
-
-    model = Cards
-    template_name = "cards/mcp_servers.html"
-    context_object_name = "cards"  # html variable to cycle through database
-
-    def get_queryset(self) -> QuerySet:
-        """Return all cards assigned to the MCP Server category.
-
-        Returns:
-            QuerySet: Cards whose ``category="mcp_server"``.
-        """
-        return Cards.objects.filter(category="mcp_server")
-
-
-# class CardAgentsView(LoginRequiredMixin, generic.ListView):  # Listview automatically grabs all rows from database
-class CardAgentsView(generic.ListView):  # Listview automatically grabs all rows from database
-    """Display cards in the Agent category."""
-
-    model = Cards
-    template_name = "cards/agents.html"
-    context_object_name = "cards"  # html variable to cycle through database
-
-    def get_queryset(self) -> QuerySet:
-        """Return all cards assigned to the Agent category.
-
-        Returns:
-            QuerySet: Cards whose ``category="agent"``.
-        """
-        return Cards.objects.filter(category="agent")
-
-
-# class CardSkillsView(LoginRequiredMixin, generic.ListView):  # Listview automatically grabs all rows from database
-class CardSkillsView(generic.ListView):  # Listview automatically grabs all rows from database
-    """Display cards in the SKILL.md category."""
-
-    model = Cards
-    template_name = "cards/skills.html"
-    context_object_name = "cards"  # html variable to cycle through database
-
-    def get_queryset(self) -> QuerySet:
-        """Return all cards assigned to the SKILL.md category.
-
-        Returns:
-            QuerySet: Cards whose ``category="skills_md"``.
-        """
-        return Cards.objects.filter(category="skills_md")
-
-
-# class MyCardListView(LoginRequiredMixin, generic.ListView):
-class MyCardListView(generic.ListView):
-    """Display cards owned by the authenticated user."""
-
-    model = Cards
-    template_name = "cards/my_cards.html"
-    context_object_name = "cards"
-
-    def get_queryset(self) -> QuerySet:
-        """Return cards owned by the current user.
-
-        Returns:
-            QuerySet: Cards belonging to the authenticated user.
-        """
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return Cards.objects.all()
-        return Cards.objects.filter(owner=user)
-
-
-class CardTrendingView(generic.ListView):
-    """Display cards ranked by recent engagement."""
-
-    model = Cards
-    template_name = "cards/trending.html"
-    context_object_name = "cards"
-
-    def get_queryset(self) -> QuerySet:
-        """Return cards ranked by engagement over the past 30 days.
-
-        The trending score is calculated as:
-
-        ``(total clicks * 3) + total impressions``
-
-        Returns:
-            QuerySet: Cards ordered by descending trending score,
-                then alphabetically by name.
-        """
-        start_date = timezone.localdate() - timedelta(days=30)
-
-        return (
-            Cards.objects.filter(metrics__date__gte=start_date)
-            .annotate(
-                total_impressions=Sum("metrics__impressions"),
-                total_clicks=Sum("metrics__clicks"),
-            )
-            .annotate(trending_score=(F("total_clicks") * 3 + F("total_impressions")))
-            .order_by("-trending_score", "name")
-        )
