@@ -1,51 +1,67 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {% if owner_filter == "me" %}
-        My Cards
-    {% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
-        MCP Server Cards
-    {% elif selected_categories|length == 1 and "agent" in selected_categories %}
-        Agent Cards
-    {% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
-        Skills.md Cards
-    {% elif trending == "true" %}
-        Trending Cards
-    {% else %}
-        All Cards
-    {% endif %}
+{% if owner_filter == "me" %}
+My Cards
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+MCP Server Cards
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+Agent Cards
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+Skills.md Cards
+{% elif trending == "true" %}
+Trending Cards
+{% else %}
+All Cards
+{% endif %}
 {% endblock %}
 
 {% block page_title %}
-    {% if owner_filter == "me" %}
-        Database of My Cards
-    {% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
-        Database of MCP Server Cards
-    {% elif selected_categories|length == 1 and "agent" in selected_categories %}
-        Database of Agent Cards
-    {% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
-        Database of Skills.md Cards
-    {% elif trending == "true" %}
-        Database of Trending Cards
-    {% else %}
-        Database of All Cards
-    {% endif %}
+{% if owner_filter == "me" %}
+My Cards
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+MCP Server Cards
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+Agent Cards
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+Skills.md Cards
+{% elif trending == "true" %}
+Trending Cards
+{% else %}
+All Cards
+{% endif %}
 {% endblock %}
 
 {% block page_description %}
-    {% if owner_filter == "me" %}
-        View all the cards created by you.
-    {% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
-        View all the cards available for MCP Servers.
-    {% elif selected_categories|length == 1 and "agent" in selected_categories %}
-        View all the cards available for Agents.
-    {% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
-        View all the cards available for Skills.md.
-    {% elif trending == "true" %}
-        View all the cards that are trending.
-    {% else %}
-        View all the cards available for the different AI tools.
-    {% endif %}
+{% if owner_filter == "me" %}
+View all the cards created by you.
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+View all the cards available for MCP Servers.
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+View all the cards available for Agents.
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+View all the cards available for Skills.md.
+{% elif trending == "true" %}
+View all the cards that are trending.
+{% else %}
+View all the cards available for the different AI tools.
+{% endif %}
+{% endblock %}
+
+{% block image_header %}
+{% if owner_filter == "me" %}
+<i class="fa-solid fa-user" aria-hidden="true"></i>
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+<i class="fa-solid fa-server" aria-hidden="true"></i>
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+<i class="fa-solid fa-robot" aria-hidden="true"></i>
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+<i class="fa-solid fa-file-code" aria-hidden="true"></i>
+{% elif trending == "true" %}
+<i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+{% else %}
+<i class="fa-solid fa-infinity" aria-hidden="true"></i>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -54,7 +70,8 @@
     <aside class="cards-sidebar">
         <h2>Filter Cards</h2>
         <form method="get">
-            <input aria-label="Search cards" type="search" name="query" value="{{ search_query }}" placeholder="Search...">
+            <input aria-label="Search cards" type="search" name="query" value="{{ search_query }}"
+                placeholder="Search...">
 
             <h3>Category</h3>
 
@@ -114,8 +131,10 @@
                 <td>{{ card.category }}</td>
                 <td>{{ card.owner }}</td>
                 <td>{{ card.institution }}</td>
-                <td>{% if card.from_official_team %}<span class="official-check" title="Official team resource" aria-label="Official team resource">✓</span>{% endif %}</td>
-                <td>{% if card.external_url %}<a href="{{ card.external_url }}" target="_blank" rel="noopener">↗</a>{% endif %}</td>
+                <td>{% if card.from_official_team %}<span class="official-check" title="Official team resource"
+                        aria-label="Official team resource">✓</span>{% endif %}</td>
+                <td>{% if card.external_url %}<a href="{{ card.external_url }}" target="_blank"
+                        rel="noopener">↗</a>{% endif %}</td>
                 {% if user == card.owner or user.is_staff or user.is_superuser %}
                 <td>
                     <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">

@@ -324,13 +324,18 @@ input[type="checkbox"] {
   min-height: 150px;
   place-items: center;
   border-radius: .7rem;
-  background: #edf4f6;
+  background: transparent;
 }
 
 .detail-card__logo img {
   max-width: 130px;
   max-height: 130px;
   object-fit: contain;
+}
+
+.detail-card__logo .fa-solid {
+  color: #fff;
+  font-size: 4rem;
 }
 
 .detail-list {

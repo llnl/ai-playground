@@ -8,6 +8,20 @@
 {{ card.description }}
 {% endblock %}
 
+{% block image_header %}
+{% if card.logo_url %}
+<img src="{{ card.logo_url }}" alt="{{ card.name }} logo">
+{% elif card.category == "mcp_server" %}
+<i class="fa-solid fa-server" aria-hidden="true"></i>
+{% elif card.category == "agent" %}
+<i class="fa-solid fa-robot" aria-hidden="true"></i>
+{% elif card.category == "skills_md" %}
+<i class="fa-solid fa-file-code" aria-hidden="true"></i>
+{% else %}
+<i class="fa-solid fa-infinity" aria-hidden="true"></i>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 <article class="detail-card">
@@ -16,41 +30,38 @@
         <h2>About this resource</h2>
         <p>{{ card.description }}</p>
         <dl class="detail-list">
-            {% if card.institution %}<div>
+            <div>
                 <dt>Institution</dt>
                 <dd>{{ card.institution }}</dd>
-            </div>{% endif %}
-            {% if card.maintainers %}<div>
+            </div>
+            <div>
                 <dt>Maintainers</dt>
                 <dd>{% for maintainer in card.maintainers %}{{ maintainer }}{% if not forloop.last %},
                     {% endif %}{% endfor %}</dd>
-            </div>{% endif %}
-            {% if card.tags %}<div>
+            </div>
+            <div>
                 <dt>Tags</dt>
                 <dd>{% for tag in card.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</dd>
-            </div>{% endif %}
-            {% if card.documentation_url %}<div>
+            </div>
+            <div>
                 <dt>Documentation</dt>
                 <dd><a href="{{ card.documentation_url }}" target="_blank" rel="noopener">Open documentation ↗</a></dd>
-            </div>{% endif %}
-            {% if card.external_url %}<div>
+            </div>
+            <div>
                 <dt>External link</dt>
                 <dd><a href="{{ card.external_url }}" target="_blank" rel="noopener">Visit resource ↗</a></dd>
-            </div>{% endif %}
+            </div>
         </dl>
         <div class="form-actions">
             <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Back to directory</a>
+        </div>
+        <div class="form-actions">
             {% if user == card.owner or user.is_staff or user.is_superuser %}
             <a class="button-link" href="{% url 'cards:card_update' card.pk %}">Update resource</a>
             <a class="button-link button-link--danger" href="{% url 'cards:card_delete' card.pk %}">Delete resource</a>
-            {% else %}
-            <span class="button-link button-link--disabled" aria-disabled="true">Update resource</span>
-            <span class="button-link button-link--disabled" aria-disabled="true">Delete resource</span>
             {% endif %}
         </div>
     </div>
-    {% if card.logo_url %}<div class="detail-card__logo"><img src="{{ card.logo_url }}" alt="{{ card.name }} logo">
-    </div>{% endif %}
 </article>
 
 {% endblock %}

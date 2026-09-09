@@ -49,9 +49,7 @@
   border-radius: 12px;
   color: var(--teal-dark);
   background: #e5f3f2;
-  font-family: "DM Mono", monospace;
   font-size: 1.5rem;
-  font-weight: 500;
 }
 
 .card-tile h2 {
