@@ -12,9 +12,10 @@
   gap: 2rem;
 }
 
-.page-header__content {
+.page-header__content,
+.page-header .detail-card__logo {
   min-width: 0;
-  flex: 1;
+  flex: 0 0 calc(50% - 1rem);
 }
 
 .page-header .eyebrow {
@@ -45,5 +46,11 @@
   .page-header__inner {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .page-header__content,
+  .page-header .detail-card__logo {
+    flex-basis: 100%;
+    width: 100%;
   }
 }

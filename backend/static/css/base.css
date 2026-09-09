@@ -322,14 +322,17 @@ input[type="checkbox"] {
 .detail-card__logo {
   display: grid;
   min-height: 150px;
+  max-height: 320px;
   place-items: center;
   border-radius: .7rem;
   background: transparent;
 }
 
 .detail-card__logo img {
-  max-width: 130px;
-  max-height: 130px;
+  width: 100%;
+  max-width: 100%;
+  max-height: 320px;
+  height: auto;
   object-fit: contain;
 }
 
