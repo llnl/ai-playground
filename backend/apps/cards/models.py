@@ -54,13 +54,8 @@ class Cards(models.Model):
     )
 
     logo_url = models.URLField(blank=True)
-
     documentation_url = models.URLField(blank=True)
-
-    internal_url = models.URLField(
-        blank=True,
-        help_text=('Example: [{"name": "run_simulation", "description": "Runs a simulation"}]'),
-    )
+    internal_url = models.URLField(blank=True)
     external_url = models.URLField(blank=True)
 
     tools = models.JSONField(

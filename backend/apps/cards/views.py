@@ -58,7 +58,7 @@ class CardDetailView(LoginRequiredMixin, generic.DetailView):
         return response
 
 
-class CardUpdateView(LoginRequiredMixin, generic.UpdateView):  # gives permissions to only filters below
+class CardUpdateView(LoginRequiredMixin, generic.UpdateView):
     """Allow users to update only cards they own."""
 
     model = Cards
@@ -80,7 +80,7 @@ class CardUpdateView(LoginRequiredMixin, generic.UpdateView):  # gives permissio
         return Cards.objects.filter(owner=user)
 
 
-class CardDeleteView(LoginRequiredMixin, generic.DeleteView):  # gives permissions to only filters below
+class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
     """Allow users to delete only cards they own."""
 
     model = Cards
@@ -172,9 +172,8 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
         return queryset
 
-    # Since page refreshes, need values from before in query
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Add the current search and category filters to the context for the HTML template.
+        """Add the current search and category filters to the context for the HTML template when page refreshes.
 
         Args:
             **kwargs: Additional context arguments supplied by Django.
@@ -199,6 +198,9 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
         to create missing metrics efficiently, and ``update()`` to increment all
         matching impressions in one database operation. Python loops are limited
         to constructing the list of missing metric objects.
+
+        Impressions are increased here since this is the last step before sending response.
+        Otherwise other methods may be called more than once.
 
         Args:
             context: Template context containing the displayed cards.

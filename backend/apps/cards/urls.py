@@ -11,10 +11,7 @@ app_name = "cards"
 
 
 def cards_by_category(request, **kwargs):
-    """Redirect to CardAllView with search criteria.
-
-    Needed as `path()` requires a callable view, not an already created redirect response.
-    """
+    """Redirect to CardAllView with search criteria."""
     url = reverse("cards:card_all")
     params = {key: value for key, value in kwargs.items() if value not in (None, "")}
 

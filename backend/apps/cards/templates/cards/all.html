@@ -90,14 +90,17 @@
     <div class="cards-table">
         <table>
             <tr>
-                <th>ID</th>
                 <th>Name</th>
                 <th>Description</th>
-                <th>Logo URL</th>
+                <th>Category</th>
                 <th>Owner</th>
+                <th>Institution</th>
                 <th>Official</th>
+                <th>External URL</th>
+                {% if user == card.owner or user.is_staff or user.is_superuser %}
                 <th>Edit</th>
                 <th>Delete</th>
+                {% endif %}
                 {% if trending  == "true" %}
                 <th>Clicks</th>
                 <th>Impressions</th>
@@ -106,13 +109,13 @@
 
             {% for card in cards %}
             <tr>
-                <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.id }}</a></td>
-                <td>{{ card.name }}</td>
+                <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.name }}</a></td>
                 <td>{{ card.description }}</td>
-                <td>{{ card.logo_url }}</td>
+                <td>{{ card.category }}</td>
                 <td>{{ card.owner }}</td>
-                <td>{% if card.from_official_team %}<span class="official-check" title="Official team resource"
-                        aria-label="Official team resource">✓</span>{% endif %}</td>
+                <td>{{ card.institution }}</td>
+                <td>{% if card.from_official_team %}<span class="official-check" title="Official team resource" aria-label="Official team resource">✓</span>{% endif %}</td>
+                <td>{% if card.external_url %}<a href="{{ card.external_url }}" target="_blank" rel="noopener">↗</a>{% endif %}</td>
                 {% if user == card.owner or user.is_staff or user.is_superuser %}
                 <td>
                     <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
@@ -124,9 +127,6 @@
                         <button class="table-action table-action--danger" type="submit">Delete</button>
                     </form>
                 </td>
-                {% else %}
-                <td><button class="table-action table-action--disabled" type="button" disabled>Edit</button></td>
-                <td><button class="table-action table-action--disabled" type="button" disabled>Delete</button></td>
                 {% endif %}
                 {% if trending  == "true" %}
                 <td>{{ card.total_clicks|default:0 }}</td>
@@ -135,7 +135,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8">No cards found.</td>
+                <td colspan="2">No cards found.</td>
             </tr>
             {% endfor %}
         </table>
