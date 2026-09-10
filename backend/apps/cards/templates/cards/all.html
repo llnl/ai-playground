@@ -110,14 +110,11 @@ View all the cards available for the different AI tools.
                 <th>Name</th>
                 <th>Description</th>
                 <th>Category</th>
-                <th>Owner</th>
                 <th>Institution</th>
                 <th>Official</th>
                 <th>External URL</th>
-                {% if user == card.owner or user.is_staff or user.is_superuser %}
                 <th>Edit</th>
                 <th>Delete</th>
-                {% endif %}
                 {% if trending  == "true" %}
                 <th>Clicks</th>
                 <th>Impressions</th>
@@ -126,30 +123,38 @@ View all the cards available for the different AI tools.
 
             {% for card in cards %}
             <tr>
-                <td><a href="{% url 'cards:card_detail' card.pk %}">{{ card.name }}</a></td>
-                <td>{{ card.description }}</td>
-                <td>{{ card.category }}</td>
-                <td>{{ card.owner }}</td>
-                <td>{{ card.institution }}</td>
-                <td>{% if card.from_official_team %}<span class="official-check" title="Official team resource"
-                        aria-label="Official team resource">✓</span>{% endif %}</td>
-                <td>{% if card.external_url %}<a href="{{ card.external_url }}" target="_blank"
-                        rel="noopener">↗</a>{% endif %}</td>
+                <td><a class="table-cell__clamp" href="{% url 'cards:card_detail' card.pk %}"
+                        title="{{ card.name }}">{{ card.name }}</a></td>
+                <td><span class="table-cell__clamp" title="{{ card.description }}">{{ card.description }}</span></td>
+                <td><span class="table-cell__clamp" title="{{ card.category }}">{{ card.category }}</span></td>
+                <td><span class="table-cell__clamp" title="{{ card.institution }}">{{ card.institution }}</span></td>
+                <td><span class="table-cell__clamp">{% if card.from_official_team %}<span class="official-check"
+                            title="Official team resource"
+                            aria-label="Official team resource">✓</span>{% endif %}</span></td>
+                <td><span class="table-cell__clamp">{% if card.external_url %}<a href="{{ card.external_url }}"
+                            target="_blank" rel="noopener">↗</a>{% endif %}</span></td>
                 {% if user == card.owner or user.is_staff or user.is_superuser %}
                 <td>
-                    <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
-                        <button class="table-action" type="submit">Edit</button>
-                    </form>
+                    <div class="table-cell__clamp">
+                        <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
+                            <button class="table-action" type="submit">Edit</button>
+                        </form>
+                    </div>
                 </td>
                 <td>
-                    <form class="table-action-form" method="get" action="{% url 'cards:card_delete' card.pk %}">
-                        <button class="table-action table-action--danger" type="submit">Delete</button>
-                    </form>
+                    <div class="table-cell__clamp">
+                        <form class="table-action-form" method="get" action="{% url 'cards:card_delete' card.pk %}">
+                            <button class="table-action table-action--danger" type="submit">Delete</button>
+                        </form>
+                    </div>
                 </td>
+                {% else %}
+                <td><span class="table-cell__clamp">N/A</span></td>
+                <td><span class="table-cell__clamp">N/A</span></td>
                 {% endif %}
                 {% if trending  == "true" %}
-                <td>{{ card.total_clicks|default:0 }}</td>
-                <td>{{ card.total_impressions|default:0 }}</td>
+                <td><span class="table-cell__clamp">{{ card.total_clicks|default:0 }}</span></td>
+                <td><span class="table-cell__clamp">{{ card.total_impressions|default:0 }}</span></td>
                 {% endif %}
             </tr>
             {% empty %}

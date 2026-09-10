@@ -27,7 +27,11 @@ class Cards(models.Model):
     maintainers = models.JSONField(
         default=list,
         blank=True,  # makes it optional
-        help_text=("Enter one maintainer per line using the format: Name, email address."),
+        help_text=(
+            'Example (be sure to use double quotes ""): '
+            '["First Maintainer 1st@fake.com",'
+            ' "Second Maintainer 2nd@fake.com"]'
+        ),
     )
 
     institution = models.CharField(max_length=200, blank=True)
@@ -50,7 +54,7 @@ class Cards(models.Model):
     tags = models.JSONField(
         default=list,
         blank=True,
-        help_text="Example: ['simulation', 'geometry']",
+        help_text='Example (be sure to use double quotes ""): ["simulation", "geometry"]',
     )
 
     logo_url = models.URLField(blank=True)
@@ -61,7 +65,11 @@ class Cards(models.Model):
     tools = models.JSONField(
         default=list,
         blank=True,
-        help_text=('Example: [{"name": "run_simulation", "description": "Runs a simulation"}]'),
+        help_text=(
+            'Example (be sure to use double quotes ""): '
+            '[{"name": "run_simulation", "description": "Runs a simulation"},'
+            ' {"name": "post_process", "description": "Post-processes simulation results"}]'
+        ),
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

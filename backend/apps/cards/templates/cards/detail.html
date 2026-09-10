@@ -27,35 +27,51 @@
 <article class="detail-card">
     <div>
         <p class="eyebrow">{{ card.get_category_display|default:"AI resource" }}</p>
-        <h2>About this resource</h2>
-        <p>{{ card.description }}</p>
+        <div class="detail-card__heading">
+            <h2>About this resource {% if card.from_official_team %}<span class="official-badge"><span
+                        class="official-check" title="Official team resource"
+                        aria-label="Official team resource">✓</span>Official</span>{% endif %}</h2>
+            <div class="detail-card__metadata">
+                <span>Created <time
+                        datetime="{{ card.created_at|date:'c' }}">{{ card.created_at|date:"M j, Y" }}</time></span>
+                <span>Updated <time
+                        datetime="{{ card.updated_at|date:'c' }}">{{ card.updated_at|date:"M j, Y" }}</time></span>
+            </div>
+        </div>
         <dl class="detail-list">
+            <div>
+                <dt>Owner</dt>
+                <dd>{{ card.owner.username }} {{ card.owner.email }}</dd>
+            </div>
             <div>
                 <dt>Institution</dt>
                 <dd>{{ card.institution }}</dd>
             </div>
             <div>
                 <dt>Maintainers</dt>
-                <dd>{% for maintainer in card.maintainers %}{{ maintainer }}{% if not forloop.last %},
-                    {% endif %}{% endfor %}</dd>
+                <dd>{% for maintainer in card.maintainers %}<span class="maintainer">{{ maintainer }}</span>{% endfor %}
+                </dd>
             </div>
             <div>
                 <dt>Tags</dt>
                 <dd>{% for tag in card.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</dd>
             </div>
             <div>
-                <dt>Documentation</dt>
-                <dd><a href="{{ card.documentation_url }}" target="_blank" rel="noopener">Open documentation ↗</a></dd>
+                <dt>Tools</dt>
+                <dd>{% for tool in card.tools %}<span class="tool"
+                        title="{{ tool.name }}: {{ tool.description }}"><strong
+                            class="tool__name">{{ tool.name }}</strong><span
+                            class="tool__description">{{ tool.description }}</span></span>{% endfor %}</dd>
             </div>
-            <div>
-                <dt>External link</dt>
-                <dd><a href="{{ card.external_url }}" target="_blank" rel="noopener">Visit resource ↗</a></dd>
+            <div class="detail-list__links">
+                <dt>Links</dt>
+                <dd><a href="{{ card.documentation_url }}" target="_blank" rel="noopener">Open documentation ↗</a></dd>
+                <dd><a href="{{ card.internal_url }}" target="_blank" rel="noopener">Visit Internal Link ↗</a></dd>
+                <dd><a href="{{ card.external_url }}" target="_blank" rel="noopener">Visit External Link ↗</a></dd>
             </div>
         </dl>
         <div class="form-actions">
             <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Back to directory</a>
-        </div>
-        <div class="form-actions">
             {% if user == card.owner or user.is_staff or user.is_superuser %}
             <a class="button-link" href="{% url 'cards:card_update' card.pk %}">Update resource</a>
             <a class="button-link button-link--danger" href="{% url 'cards:card_delete' card.pk %}">Delete resource</a>

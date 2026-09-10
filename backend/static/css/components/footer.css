@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.4rem max(1.5rem, calc((100% - 1200px) / 2));
+  padding: 1.4rem max(1.5rem, calc((100% - 1440px) / 2));
   background: #102a43;
   color: #fff;
 }
