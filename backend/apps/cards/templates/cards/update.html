@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Update Card{% endblock %}
+
+{% block page_title %}Update Your AI Tool Card{% endblock %}
+
+{% block page_description %}
+Edit the details for this AI resource.
+{% endblock %}
+
+{% block content %}
+
+<form class="form-card" method="post" action="{% url 'cards:card_update' card.pk %}">
+    {% csrf_token %}
+    {{ form }}
+    <div class="form-actions">
+        <button type="submit">Save changes</button>
+        <a class="button-link button-link--secondary" href="{% url 'cards:card_detail' card.pk %}">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

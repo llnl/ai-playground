@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if owner_filter == "me" %}
+My Cards
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+MCP Server Cards
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+Agent Cards
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+Skills.md Cards
+{% elif trending == "true" %}
+Trending Cards
+{% else %}
+All Cards
+{% endif %}
+{% endblock %}
+
+{% block page_title %}
+{% if owner_filter == "me" %}
+My Cards
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+MCP Server Cards
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+Agent Cards
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+Skills.md Cards
+{% elif trending == "true" %}
+Trending Cards
+{% else %}
+All Cards
+{% endif %}
+{% endblock %}
+
+{% block page_description %}
+{% if owner_filter == "me" %}
+View all the cards created by you.
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+View all the cards available for MCP Servers.
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+View all the cards available for Agents.
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+View all the cards available for Skills.md.
+{% elif trending == "true" %}
+View all the cards that are trending.
+{% else %}
+View all the cards available for the different AI tools.
+{% endif %}
+{% endblock %}
+
+{% block image_header %}
+{% if owner_filter == "me" %}
+<i class="fa-solid fa-user" aria-hidden="true"></i>
+{% elif selected_categories|length == 1 and "mcp_server" in selected_categories %}
+<i class="fa-solid fa-server" aria-hidden="true"></i>
+{% elif selected_categories|length == 1 and "agent" in selected_categories %}
+<i class="fa-solid fa-robot" aria-hidden="true"></i>
+{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+<i class="fa-solid fa-file-code" aria-hidden="true"></i>
+{% elif trending == "true" %}
+<i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+{% else %}
+<i class="fa-solid fa-infinity" aria-hidden="true"></i>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="cards-layout">
+    <aside class="cards-sidebar">
+        <h2>Filter Cards</h2>
+        <form method="get">
+            <input aria-label="Search cards" type="search" name="query" value="{{ search_query }}"
+                placeholder="Search...">
+
+            <h3>Category</h3>
+
+            <label>
+                <input type="checkbox" name="category" value="mcp_server"
+                    {% if "mcp_server" in selected_categories %}checked{% endif %}>
+                MCP Server
+            </label>
+
+            <label>
+                <input type="checkbox" name="category" value="agent"
+                    {% if "agent" in selected_categories %}checked{% endif %}>
+                Agent
+            </label>
+
+            <label>
+                <input type="checkbox" name="category" value="skills_md"
+                    {% if "skills_md" in selected_categories %}checked{% endif %}>
+                Skills MD
+            </label>
+
+            {% if owner_filter %}
+            <input type="hidden" name="owner" value="{{ owner_filter }}">
+            {% endif %}
+            {% if trending == "true" %}
+            <input type="hidden" name="trending" value="true">
+            {% endif %}
+            <button type="submit">Apply filters</button>
+            <a href="{% url 'cards:card_all' %}">Clear</a>
+        </form>
+    </aside>
+
+    <div class="cards-table">
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Institution</th>
+                <th>Official</th>
+                <th>External URL</th>
+                <th>Edit</th>
+                <th>Delete</th>
+                {% if trending  == "true" %}
+                <th>Clicks</th>
+                <th>Impressions</th>
+                {% endif %}
+            </tr>
+
+            {% for card in cards %}
+            <tr>
+                <td><a class="table-cell__clamp" href="{% url 'cards:card_detail' card.pk %}"
+                        title="{{ card.name }}">{{ card.name }}</a></td>
+                <td><span class="table-cell__clamp" title="{{ card.description }}">{{ card.description }}</span></td>
+                <td><span class="table-cell__clamp" title="{{ card.category }}">{{ card.category }}</span></td>
+                <td><span class="table-cell__clamp" title="{{ card.institution }}">{{ card.institution }}</span></td>
+                <td><span class="table-cell__clamp">{% if card.from_official_team %}<span class="official-check"
+                            title="Official team resource"
+                            aria-label="Official team resource">✓</span>{% endif %}</span></td>
+                <td><span class="table-cell__clamp">{% if card.external_url %}<a href="{{ card.external_url }}"
+                            target="_blank" rel="noopener">↗</a>{% endif %}</span></td>
+                {% if user == card.owner or user.is_staff or user.is_superuser %}
+                <td>
+                    <div class="table-cell__clamp">
+                        <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">
+                            <button class="table-action" type="submit">Edit</button>
+                        </form>
+                    </div>
+                </td>
+                <td>
+                    <div class="table-cell__clamp">
+                        <form class="table-action-form" method="get" action="{% url 'cards:card_delete' card.pk %}">
+                            <button class="table-action table-action--danger" type="submit">Delete</button>
+                        </form>
+                    </div>
+                </td>
+                {% else %}
+                <td><span class="table-cell__clamp">N/A</span></td>
+                <td><span class="table-cell__clamp">N/A</span></td>
+                {% endif %}
+                {% if trending  == "true" %}
+                <td><span class="table-cell__clamp">{{ card.total_clicks|default:0 }}</span></td>
+                <td><span class="table-cell__clamp">{{ card.total_impressions|default:0 }}</span></td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No cards found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+
+
+{% endblock %}
