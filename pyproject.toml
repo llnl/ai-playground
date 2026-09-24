@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai_playground"
+description = "Informational website that helps users discover and learn about existing AI tooling."
+version = "0.0.1"
+requires-python = ">=3.11"
+readme = "README.md"
+
+dependencies = [
+    "Django",
+    "djangorestframework",
+    "django-cors-headers",
+    "gunicorn",
+    "psycopg[binary]",
+    "Pillow",
+    "python-dotenv",
+    "drf-spectacular",
+    "pre-commit==4.6.0",
+    "ruff>=0.16.2",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "Apache-2.0 WITH LLVM-exception"
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["backend*"]
+exclude = ["frontend*"]
+
+[project.urls]
+Homepage = "https://github.com/llnl/ai-playground"
+Documentation = "https://software.llnl.gov/ai-playground"
+Issues = "https://github.com/llnl/ai-playground/issues"
+"Release Notes" = "https://github.com/llnl/ai-playground/releases"
+
+[project.optional-dependencies]
+docs = [
+    # Docs
+    "markdown-grid-tables",  # Support for grid tables in Markdown
+    "mkdocs",  # Static site generator for project documentation
+    "mkdocs-codeinclude-plugin",  # Include code snippets in MkDocs
+    "mkdocs-material",  # Material theme for MkDocs
+    "mkdocs-glightbox",  # Allows for image lightboxing in MkDocs
+
+    # API docs requirements
+    "mkdocs-literate-nav",  # Enhanced navigation for MkDocs (SUMMARY.md support)
+    "mkdocs-gen-files",  # Generate files for MkDocs at build time
+    "mkdocstrings",  # Automatic API documentation from docstrings
+    "mkdocstrings-python",  # Python handler for mkdocstrings
+
+    # Deployment
+    "mike",
+]
+
+tests = [
+    "pytest",
+    "pytest-mock",
+    "pre-commit",
+    "ruff",
+    "pytest-asyncio",
+    "pytest-django"
+]
+
+all = ["ai_playground[docs, tests]"]
+
+[tool.ruff]
+line-length = 120
+exclude = [
+    "**/migrations/*.py",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "W",
+    "S",
+    "D",
+    "DOC"
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
