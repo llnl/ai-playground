@@ -1,6 +1,16 @@
 # Python packaging artifacts
 *.egg-info/
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -19,3 +29,14 @@ Thumbs.db
 .env.*
 !.env.example
 uv.lock
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
