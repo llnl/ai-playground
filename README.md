@@ -57,19 +57,6 @@ Each registered tool will include the following metadata:
 
 Tools created from the MADA library will be registered automatically in the AI Playground database.
 
-## Release
-
-AI Playground is distributed under the terms of the Apache License (Version 2.0) WITH LLVM Exception.
-
-All new contributions must be made under the Apache 2.0 License WITH LLVM Exception.
-
-See [LICENSE](./LICENSE), [COPYRIGHT](./COPYRIGHT), and [NOTICE](./NOTICE) for details.
-
-SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-
-LLNL-CODE-2022047
-
-
 ## Getting started for developers
 
 These instructions will show developers how to start up the website instance in order to start modifying it.
@@ -109,3 +96,15 @@ DEBUG=True
         * `src/apps/cards/models.py` contains the different models (datatables) that contain the data for the `cards` app. This is where you define the datatables and their fields. If you updated your datatables or create new ones, rerun the commands in step 7 and **git commit `src/apps/cards/migrations/*.py`**.
         * `src/apps/cards/urls.py` contains the different urls for the `cards` app. These reference the different views that connect the Python to html templates.
         * `src/apps/cards/views.py` contains the different views for the `cards` app. These connect the models, forms, and html templates to display the website.
+
+## Release
+
+AI Playground is distributed under the terms of the Apache License (Version 2.0) WITH LLVM Exception.
+
+All new contributions must be made under the Apache 2.0 License WITH LLVM Exception.
+
+See [LICENSE](./LICENSE), [COPYRIGHT](./COPYRIGHT), and [NOTICE](./NOTICE) for details.
+
+SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+LLNL-CODE-2022047
