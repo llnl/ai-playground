@@ -77,7 +77,7 @@ These instructions will show developers how to start up the website instance in 
 1. SSH into HPC with port forwarding: `ssh -4L 8000:localhost:8000 USER@HPC`
 2. Install the environment: `uv sync`
 3. Go https://launchit.llnl.gov/ and create an instance of PostgreSQL Vector
-4. Create a `src/.env` file with the information below. LaunchIT will have the DB information while you will need to create a Django Key **ONLY ONCE** with `uv run python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())`
+4. Create a `src/.env` file with the information below. LaunchIT will have the DB information while you will need to create a Django Key **ONLY ONCE** with `uv run python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
 
 ```
 SECRET_KEY=...
