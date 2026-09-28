@@ -69,15 +69,20 @@ class CardUpdateView(LoginRequiredMixin, generic.UpdateView):
     # get queryset is a special method that returns only a subset of the table
     # combined with DeleteView it only give access to certain urls
     def get_queryset(self) -> QuerySet:
-        """Return cards owned by the current user.
+        """Return cards that the current user owns or maintains.
 
         Returns:
             QuerySet: Cards belonging to the authenticated user.
         """
         user = self.request.user
+        queryset = Cards.objects.all()
+
         if user.is_staff or user.is_superuser:
-            return Cards.objects.all()
-        return Cards.objects.filter(owner=user)
+            return queryset
+
+        queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
+
+        return queryset
 
 
 class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
@@ -91,15 +96,20 @@ class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
     # get queryset is a special method that returns only a subset of the table
     # combined with DeleteView it only give access to certain urls
     def get_queryset(self) -> QuerySet:
-        """Return cards owned by the current user.
+        """Return cards that the current user owns or maintains.
 
         Returns:
             QuerySet: Cards belonging to the authenticated user.
         """
         user = self.request.user
+        queryset = Cards.objects.all()
+
         if user.is_staff or user.is_superuser:
-            return Cards.objects.all()
-        return Cards.objects.filter(owner=user)
+            return queryset
+
+        queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
+
+        return queryset
 
 
 class CardAllView(LoginRequiredMixin, generic.ListView):
@@ -134,7 +144,7 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
         # Specifically for my_cards/ url
         if owner == "me" and not (user.is_staff or user.is_superuser):
-            queryset = queryset.filter(owner=user)
+            queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
 
         # These match the model and are a bunch of OR statements
         if query:

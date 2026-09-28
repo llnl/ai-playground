@@ -40,16 +40,13 @@
         </div>
         <dl class="detail-list">
             <div>
-                <dt>Owner</dt>
-                <dd>{{ card.owner.username }} {{ card.owner.email }}</dd>
-            </div>
-            <div>
                 <dt>Institution</dt>
                 <dd>{{ card.institution }}</dd>
             </div>
             <div>
                 <dt>Maintainers</dt>
-                <dd>{% for maintainer in card.maintainers %}<span class="maintainer">{{ maintainer }}</span>{% endfor %}
+                <dd>{% for maintainer in card.maintainers %}<span class="maintainer">{{ maintainer.name }}
+                        ({{ maintainer.email }})</span>{% endfor %}
                 </dd>
             </div>
             <div>
@@ -72,7 +69,7 @@
         </dl>
         <div class="form-actions">
             <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Back to directory</a>
-            {% if user == card.owner or user.is_staff or user.is_superuser %}
+            {% if user == card.owner or user.is_staff or user.is_superuser or user.email in card.maintainer_emails%}
             <a class="button-link" href="{% url 'cards:card_update' card.pk %}">Update resource</a>
             <a class="button-link button-link--danger" href="{% url 'cards:card_delete' card.pk %}">Delete resource</a>
             {% endif %}

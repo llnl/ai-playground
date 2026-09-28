@@ -133,7 +133,7 @@ View all the cards available for the different AI tools.
                             aria-label="Official team resource">✓</span>{% endif %}</span></td>
                 <td><span class="table-cell__clamp">{% if card.external_url %}<a href="{{ card.external_url }}"
                             target="_blank" rel="noopener">↗</a>{% endif %}</span></td>
-                {% if user == card.owner or user.is_staff or user.is_superuser %}
+                {% if user == card.owner or user.is_staff or user.is_superuser or user.email in card.maintainer_emails %}
                 <td>
                     <div class="table-cell__clamp">
                         <form class="table-action-form" method="get" action="{% url 'cards:card_update' card.pk %}">

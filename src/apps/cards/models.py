@@ -29,8 +29,8 @@ class Cards(models.Model):
         blank=True,  # makes it optional
         help_text=(
             'Example (be sure to use double quotes ""): '
-            '["First Maintainer 1st@fake.com",'
-            ' "Second Maintainer 2nd@fake.com"]'
+            '[{"name": "First Maintainer", "email": "1st@fake.com"}, '
+            '{"name": "Second Maintainer", "email": "2nd@fake.com"}]'
         ),
     )
 
@@ -78,6 +78,14 @@ class Cards(models.Model):
     def __str__(self):
         """Return a readable description of a database row."""
         return self.name
+
+    @property
+    def maintainer_emails(self):
+        """Return maintainer email addresses for template permission checks.
+
+        This is used in apps/cards/templates/cards/all.html to display Edit and Delete buttons.
+        """
+        return [maintainer.get("email", "") for maintainer in self.maintainers if isinstance(maintainer, dict)]
 
     def get_absolute_url(self):
         """Return the URL for this card's detail page after CardCreateView validates form."""
