@@ -71,10 +71,13 @@
             <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Back to directory</a>
             {% if user == card.owner or user.is_staff or user.is_superuser or user.email in card.maintainer_emails%}
             <a class="button-link" href="{% url 'cards:card_update' card.pk %}">Update resource</a>
-            <a class="button-link button-link--danger" href="{% url 'cards:card_delete' card.pk %}">Delete resource</a>
+            <button class="button-link button-link--danger" type="button"
+                onclick="document.getElementById('delete-card-{{ card.pk }}').showModal()">Delete resource</button>
             {% endif %}
         </div>
     </div>
 </article>
+
+{% include "cards/components/delete_confirmation_modal.html" with card=card %}
 
 {% endblock %}

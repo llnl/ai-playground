@@ -45,6 +45,49 @@ a:hover {
   color: var(--ink);
 }
 
+dialog.delete-modal {
+  max-width: 30rem;
+  border: 0;
+  border-radius: .85rem;
+  padding: 2rem;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: 0 1.5rem 4rem rgba(16, 42, 67, .25);
+}
+
+dialog.delete-modal::backdrop {
+  background: rgba(16, 42, 67, .48);
+  backdrop-filter: blur(6px);
+}
+
+dialog.delete-modal p {
+  text-align: center;
+}
+
+.delete-modal__card-name {
+  margin-top: -.5rem;
+}
+
+dialog.delete-modal .form-actions {
+  justify-content: center;
+}
+
+dialog.delete-modal .button-link {
+  transition: none;
+}
+
+dialog.delete-modal .button-link--danger:hover {
+  color: #fff;
+  background: var(--danger);
+  transform: none;
+}
+
+dialog.delete-modal .button-link--secondary:hover {
+  color: var(--ink);
+  background: #e7eef2;
+  transform: none;
+}
+
 .site-main {
   width: min(1440px, calc(100% - 3rem));
   margin: 0 auto;

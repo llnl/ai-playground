@@ -41,6 +41,10 @@
   letter-spacing: -.03em;
 }
 
+.brand:hover {
+  color: #8ee3df;
+}
+
 .brand-mark {
   display: grid;
   width: 30px;

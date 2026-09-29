@@ -143,9 +143,9 @@ View all the cards available for the different AI tools.
                 </td>
                 <td>
                     <div class="table-cell__clamp">
-                        <form class="table-action-form" method="get" action="{% url 'cards:card_delete' card.pk %}">
-                            <button class="table-action table-action--danger" type="submit">Delete</button>
-                        </form>
+                        <button class="table-action table-action--danger" type="button"
+                            onclick="document.getElementById('delete-card-{{ card.pk }}').showModal()">Delete</button>
+                        {% include "cards/components/delete_confirmation_modal.html" with card=card %}
                     </div>
                 </td>
                 {% else %}
@@ -165,7 +165,5 @@ View all the cards available for the different AI tools.
         </table>
     </div>
 </div>
-
-
 
 {% endblock %}
