@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Create a Card{% endblock %}
+
+{% block page_title %}Create a Card for your AI Tool{% endblock %}
+
+{% block page_description %}
+Add an MCP server, agent, skill, or other AI resource to AI Playground.
+{% endblock %}
+
+{% block content %}
+
+<form class="form-card" method="post" action="{% url 'cards:card_create' %}">
+    {% csrf_token %}
+    {{ form }}
+    <div class="form-actions">
+        <button type="submit">Save card</button>
+        <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

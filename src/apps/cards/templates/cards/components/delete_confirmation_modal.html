@@ -1,0 +1,10 @@
+<dialog id="delete-card-{{ card.pk }}" class="delete-modal">
+    <p>Are you sure you want to permanently delete:</p>
+    <p class="delete-modal__card-name"><strong>"{{ card.name }}"</strong></p>
+    <form method="post" action="{% url 'cards:card_delete' card.pk %}" class="form-actions">
+        {% csrf_token %}
+        <button class="button-link button-link--danger" type="submit">Yes, delete</button>
+        <button class="button-link button-link--secondary" type="button"
+            onclick="this.closest('dialog').close()">Cancel</button>
+    </form>
+</dialog>
