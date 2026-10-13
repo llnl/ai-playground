@@ -426,12 +426,12 @@ tbody tr:hover {
   padding-top: .65rem;
 }
 
-.resource-card__footer > a {
+.resource-card__footer>a {
   font-size: .7rem;
   text-decoration: none;
 }
 
-.resource-card__footer > a span {
+.resource-card__footer>a span {
   margin-left: .25rem;
   color: #168fd3;
   font-size: .95rem;
