@@ -1,0 +1,304 @@
+/* Resource cards. Loaded after the shared directory styles intentionally. */
+.cards-layout>.resource-results {
+  display: block;
+  grid-column: 2;
+  min-width: 0;
+}
+
+.cards-layout>.resource-results>.resource-results__header {
+  display: flex;
+  width: 100%;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 1rem;
+  padding: 0;
+  gap: 1rem;
+  font-size: .9rem;
+}
+
+.cards-layout>.resource-results .resource-results__controls {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.cards-layout>.resource-results .resource-results__sort {
+  display: block;
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}
+
+.resource-sort-select {
+  display: block;
+  width: 9rem;
+  min-width: 9rem;
+  height: 2.25rem;
+  margin: 0;
+  padding: .25rem .45rem;
+  border: 1px solid #d9e3eb;
+  border-radius: .35rem;
+  background: #fff;
+  color: #102a43;
+  font: inherit;
+  font-size: .78rem;
+}
+
+/* Keep the list-view sort control identical to the card-view control. */
+.cards-layout>.resource-list-results .resource-results__sort {
+  display: block;
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}
+
+.resource-view-toggle {
+  color: #102a43;
+  font-size: .78rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.resource-view-toggle:hover {
+  color: #102a43;
+  text-decoration: none;
+}
+
+.resource-view-toggle img {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.resource-view-toggle .fa-solid {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
+  line-height: 1.5rem;
+  text-align: center;
+}
+
+.cards-layout>.resource-results>.resource-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1.25rem 1.5rem;
+}
+
+.cards-layout>.resource-results .resource-card {
+  display: flex;
+  min-width: 0;
+  min-height: 9.25rem;
+  flex-direction: column;
+  padding: 1rem 1.1rem .85rem;
+  border: 1px solid #e0e7eb;
+  border-radius: .75rem;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(16, 42, 67, .14);
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+
+.cards-layout>.resource-results a.resource-card:hover {
+  color: inherit;
+  box-shadow: 0 7px 16px rgba(16, 42, 67, .2);
+  transform: translateY(-2px);
+}
+
+.cards-layout>.resource-results .resource-card__topline {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: .7rem;
+}
+
+.cards-layout>.resource-results .resource-card__icon {
+  display: grid;
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  overflow: hidden;
+  border-radius: .6rem;
+  color: #102a43;
+  background: #e8f7fb;
+  font-size: .8rem;
+}
+
+.cards-layout>.resource-results .resource-card__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cards-layout>.resource-results .resource-card__title {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+}
+
+.cards-layout>.resource-results .resource-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.cards-layout>.resource-results .resource-badge,
+.cards-layout>.resource-results .resource-tag {
+  display: inline-block;
+  border-radius: .2rem;
+  padding: .08rem .35rem;
+  font-size: .6rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.cards-layout>.resource-results .resource-badge--official {
+  color: #fff;
+  background: #168b56;
+}
+
+
+.cards-layout>.resource-results .resource-card__meta {
+  margin: .15rem 0 .25rem 2.7rem;
+  color: #5b6f82;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.cards-layout>.resource-results .resource-card__description {
+  display: -webkit-box;
+  margin: 0 0 .65rem;
+  overflow: hidden;
+  color: #5b6f82;
+  font-size: .75rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cards-layout>.resource-results .resource-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: 0 0 .65rem;
+}
+
+.cards-layout>.resource-results .resource-tag {
+  color: #132b3b;
+  background: #f5b841;
+}
+
+.cards-layout>.resource-results .resource-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-top: auto;
+  border-top: 1px solid #edf1f3;
+  padding-top: .55rem;
+}
+
+.cards-layout>.resource-results .resource-card__metrics {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  color: #5b6f82;
+  font-size: .7rem;
+}
+
+.cards-layout>.resource-results .resource-card__metrics span {
+  white-space: nowrap;
+}
+
+.cards-layout>.resource-results .resource-card__metrics i {
+  margin-right: .15rem;
+  color: #05606b;
+}
+
+.cards-layout>.resource-results .resource-card__footer>span {
+  color: #05606b;
+  font-size: .7rem;
+}
+
+.resource-list-results__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  grid-column: 2;
+  margin: 0 0 1rem;
+  font-size: .9rem;
+}
+
+.cards-layout>.resource-list-results {
+  display: block;
+  grid-column: 2;
+  min-width: 0;
+}
+
+.cards-layout>.resource-list-results>.resource-list-results__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2rem;
+  margin: 0 0 1rem;
+  font-size: .9rem;
+}
+
+.cards-layout>.resource-list-results .resource-list-results__controls {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.cards-layout>.resource-list-results>.cards-table {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.cards-layout>.resource-list-results>.cards-table table {
+  width: 100%;
+  min-width: 720px;
+}
+
+.cards-table tr.resource-row {
+  cursor: pointer;
+}
+
+.cards-table tr.resource-row:hover td {
+  background: #f8fbfc;
+}
+
+.cards-table tr.resource-row:focus {
+  outline: 3px solid rgba(8, 126, 139, .3);
+  outline-offset: -3px;
+}
+
+@media (max-width: 760px) {
+  .resource-list-results__header {
+    grid-column: 1;
+  }
+
+  .cards-layout>.resource-list-results {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .cards-layout>.resource-results {
+    grid-column: 1;
+  }
+
+  .cards-layout>.resource-results>.resource-grid {
+    grid-template-columns: 1fr;
+  }
+}
