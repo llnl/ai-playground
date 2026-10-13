@@ -197,6 +197,7 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
         context["selected_categories"] = self.request.GET.getlist("category")
         context["owner_filter"] = self.request.GET.get("owner", "")
         context["trending"] = self.request.GET.get("trending")
+        context["resource_view"] = self.request.GET.get("view", "grid")
 
         return context
 
