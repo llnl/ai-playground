@@ -185,6 +185,40 @@ branch/PR tags move, and unlocked dependency resolution can change a rebuilt
 image even for the same source revision. The workflow uses Buildx's Actions
 cache and cancels outdated PR builds, not in-progress branch/release builds.
 
+### Container retention
+
+`.github/workflows/container-cleanup.yml` runs weekly on Sunday at 04:23 UTC
+and supports **Actions → Container cleanup → Run workflow**. Scheduled runs
+use the workflow on the repository's default branch; merge it there to activate
+the schedule and manual button. Fork schedules may need enabling in Actions,
+and GitHub can disable schedules in inactive public repositories.
+
+Cleanup defaults to dry-run: review candidate IDs, digests, tags, and reasons in
+the logs before enabling deletion. Under **Settings → Secrets and variables →
+Actions → Variables**, set `GHCR_CLEANUP_ENABLED=true` to enable scheduled
+deletion. A manual run's `dry_run` checkbox controls that run independently.
+
+The policy preserves every version with a release, current branch, or unknown
+tag; keeps the newest 30 SHA-only versions across both branches; and removes
+older SHA-only versions after seven days. PR versions are eligible only when
+all associated PRs have been closed for seven days and the version has not
+changed for seven days. Deleting a version removes **all** its tags. Reserved
+`pr-<number>` and `sha-<12-hex-characters>` names must not be used for releases.
+Before deletion, cleanup refreshes the package metadata and associated PR states;
+reopened or recently reclosed PRs protect their images even if selected earlier.
+
+Set `GHCR_PROTECTED_DIGESTS` to whitespace- or comma-separated `sha256:...`
+digests used by deployments before enabling deletion. Untagged versions are
+preserved by default, because they may still be deployed by digest; the manual
+`delete_untagged` option removes them after seven days unless protected.
+
+No additional dependencies or PAT are needed. The workflow uses `GITHUB_TOKEN`
+and Python's standard library. The package must grant this repository **Admin**
+access under its **Package settings → Manage Actions access** to permit version
+deletion; the publishing repository normally receives this automatically.
+Organization policy must also allow package writes. API permission errors fail
+the run rather than treating inaccessible PRs or packages as safe to delete.
+
 ### Proxy authentication
 
 To automatically log in users authenticated by the upstream proxy, set

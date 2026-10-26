@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Add scheduled GHCR retention with dry-run defaults, protected digests, refreshed PR checks, and manual cleanup controls
 - Build and smoke-test container images in GitHub Actions, publishing PR, branch, and release tags to GHCR
 - Container entrypoint with opt-in migrations and static collection before starting the configured command
 - Opt-in request header diagnostic endpoint with credential redaction, auth status, and non-cacheable responses
