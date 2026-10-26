@@ -10,6 +10,50 @@ permissions:
   contents: read
 
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ai_playground
+          POSTGRES_USER: ai_playground
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ai_playground -d ai_playground"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SECRET_KEY: ci-only-not-a-deployment-secret
+      DB_NAME: ai_playground
+      DB_USER: ai_playground
+      DB_PASSWORD: ci-only-password
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DEBUG: 'false'
+      PROXY_AUTH_ENABLED: 'false'
+      TRUST_PROXY_HEADERS: 'false'
+      HEADER_DIAGNOSTICS_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install application and testing dependencies
+        run: python -m pip install -e '.[tests]'
+
+      - name: Test container retention safeguards
+        run: python -m unittest discover -s .github/container -p test_cleanup.py
+
+      - name: Test Django configuration and card permissions
+        run: python src/manage.py test config apps.cards --noinput
+
   changelog:
     runs-on: ubuntu-latest
     steps:

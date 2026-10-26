@@ -83,6 +83,25 @@ DEBUG=True
 8. Go to http://localhost:8000/admin/ to log in
 9. Go to http://localhost:8000 to interact with the site
 
+### Regression tests
+
+Install testing dependencies with `uv sync --extra tests`, then run:
+
+```sh
+uv run python src/manage.py test config apps.cards --noinput
+uv run python -m unittest discover -s .github/container -p test_cleanup.py
+```
+
+The Django suite uses the PostgreSQL configuration in `src/.env`. The database
+user must be permitted to create a test database; do not point tests at a
+production database. Card permission integration tests require JSON containment
+support and are skipped on SQLite. The cleanup tests need no database or network.
+
+Pull-request CI runs both suites on Python 3.12 with a disposable PostgreSQL 16
+service and installs WhiteNoise so collected-static-file tests also run. Require
+the CI `tests` job alongside lint, changelog, and container checks in branch
+protection.
+
 ### Container builds
 
 Build the image from the repository root with `docker build -t ai-playground .`

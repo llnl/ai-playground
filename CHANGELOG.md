@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Run Django configuration, card permission, and container retention regression tests on pull requests
 - Add scheduled GHCR retention with dry-run defaults, protected digests, refreshed PR checks, and manual cleanup controls
 - Build and smoke-test container images in GitHub Actions, publishing PR, branch, and release tags to GHCR
 - Container entrypoint with opt-in migrations and static collection before starting the configured command
