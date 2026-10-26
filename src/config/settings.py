@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -180,3 +181,21 @@ SPECTACULAR_SETTINGS = {
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_WORMHOLE_SCHEME", "https") if TRUST_PROXY_HEADERS else None
 
 USE_X_FORWARDED_HOST = TRUST_PROXY_HEADERS
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "stderr": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["stderr"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
