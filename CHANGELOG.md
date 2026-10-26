@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Opt-in request header diagnostic endpoint with credential redaction, auth status, and non-cacheable responses
 - Opt-in trusted proxy login using forwarded user headers and synchronized, namespaced groups
 - Initial setup of website
 - Resource grid and list views with shared filtering and navigation controls
