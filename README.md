@@ -159,6 +159,29 @@ setting or set it to `false` and restart to return to local password login.
 In proxy mode, `/accounts/login/` redirects authenticated users to a safe local
 destination or returns a clear 403 for failed authentication.
 
+### Inspecting request headers
+
+Temporarily add `HEADER_DIAGNOSTICS_ENABLED=true` to `src/.env` (or set it in
+the server environment), restart the server, and visit `/diagnostics/headers/`
+through your trusted proxy. The endpoint returns the headers Django receives
+as JSON, including forwarded user and group headers. The diagnostic view does
+not log you in and requires no application login; it works independently of
+the proxy authentication feature.
+
+Authorization, cookie, and headers whose names contain token, secret, key,
+credential, or password are redacted. Other values may still contain sensitive
+information: only enable this behind a trusted, access-controlled proxy, share
+only the relevant identity headers with personal values anonymized, and disable
+it after diagnosis. Responses are marked non-cacheable. The endpoint returns
+404 by default; remove the setting or set it to `false` and restart to disable it.
+
+The JSON `authentication` section reports the running server's proxy setting,
+middleware installation, identity-header presence, and resulting login status.
+If `proxy_enabled` is false despite editing `src/.env`, restart the server and
+check whether its environment overrides the file. If the header is present and
+proxy mode is enabled but authentication fails, check whether the matching local
+account is inactive.
+
 ### Project Layout
 
 * `src/config/` contains the Django configuration files and settings

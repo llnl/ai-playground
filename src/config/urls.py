@@ -18,10 +18,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from .diagnostics import diagnostic_headers
 from .views import application_login, home
 
 urlpatterns = [
     path("", home, name="home"),
+    path("diagnostics/headers/", diagnostic_headers, name="diagnostic_headers"),
     path("apps/cards/", include("apps.cards.urls")),
     path("admin/", admin.site.urls),
     path("accounts/login/", application_login, name="login"),

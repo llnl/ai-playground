@@ -18,6 +18,8 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+HEADER_DIAGNOSTICS_ENABLED = os.environ.get("HEADER_DIAGNOSTICS_ENABLED", "false").strip().lower() == "true"
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
