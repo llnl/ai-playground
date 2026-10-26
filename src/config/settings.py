@@ -15,7 +15,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent  # ai-playground/backend/
+BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
@@ -25,10 +25,18 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "false").strip().lower() == "true"
 
-ALLOWED_HOSTS = []
+PROXY_AUTH_ENABLED = os.environ.get("PROXY_AUTH_ENABLED", "false").strip().lower() == "true"
+TRUST_PROXY_HEADERS = os.environ.get("TRUST_PROXY_HEADERS", str(PROXY_AUTH_ENABLED)).strip().lower() == "true"
 
+ALLOWED_HOSTS = (
+    ["*"]
+    if TRUST_PROXY_HEADERS
+    else [
+        host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]").split(",") if host.strip()
+    ]
+)
 
 # Application definition
 
@@ -54,6 +62,16 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
+if TRUST_PROXY_HEADERS:
+    MIDDLEWARE.insert(0, "config.middleware.NormalizeProxyHostMiddleware")
+if PROXY_AUTH_ENABLED:
+    AUTHENTICATION_BACKENDS = ["config.proxy_auth.ProxyUserBackend"]
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index("django.contrib.auth.middleware.AuthenticationMiddleware") + 1,
+        "config.proxy_auth.ProxyUserMiddleware",
+    )
 
 ROOT_URLCONF = "config.urls"
 
@@ -144,3 +162,7 @@ MAILERS = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_WORMHOLE_SCHEME", "https") if TRUST_PROXY_HEADERS else None
+
+USE_X_FORWARDED_HOST = TRUST_PROXY_HEADERS
