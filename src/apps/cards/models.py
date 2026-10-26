@@ -81,11 +81,15 @@ class Cards(models.Model):
 
     @property
     def maintainer_emails(self):
-        """Return maintainer email addresses for template permission checks.
+        """Return nonempty maintainer email addresses for template permission checks.
 
-        This is used in apps/cards/templates/cards/all.html to display Edit and Delete buttons.
+        This is used in the detail template to display Update and Delete buttons.
         """
-        return [maintainer.get("email", "") for maintainer in self.maintainers if isinstance(maintainer, dict)]
+        return [
+            maintainer["email"]
+            for maintainer in self.maintainers
+            if isinstance(maintainer, dict) and maintainer.get("email")
+        ]
 
     def get_absolute_url(self):
         """Return the URL for this card's detail page after CardCreateView validates form."""

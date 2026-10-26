@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import AbstractUser
 from django.db import transaction
 from django.db.models import F, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
@@ -15,6 +16,14 @@ from django.views import generic
 
 from .forms import CardForm
 from .models import CardMetrics, Cards
+
+
+def owned_or_maintained_filter(user: AbstractUser) -> Q:
+    """Match ownership and grant maintainer access only for a nonempty email."""
+    access_filter = Q(owner=user)
+    if user.email:
+        access_filter |= Q(maintainers__contains=[{"email": user.email}])
+    return access_filter
 
 
 class CardCreateView(LoginRequiredMixin, generic.CreateView):
@@ -80,7 +89,7 @@ class CardUpdateView(LoginRequiredMixin, generic.UpdateView):
         if user.is_staff or user.is_superuser:
             return queryset
 
-        queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
+        queryset = queryset.filter(owned_or_maintained_filter(user))
 
         return queryset
 
@@ -107,7 +116,7 @@ class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
         if user.is_staff or user.is_superuser:
             return queryset
 
-        queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
+        queryset = queryset.filter(owned_or_maintained_filter(user))
 
         return queryset
 
@@ -144,7 +153,7 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
         # Specifically for my_cards/ url
         if owner == "me" and not (user.is_staff or user.is_superuser):
-            queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
+            queryset = queryset.filter(owned_or_maintained_filter(user))
 
         # These match the model and are a bunch of OR statements
         if query:
