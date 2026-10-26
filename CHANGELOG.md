@@ -19,6 +19,7 @@
 - Removed edit/delete buttons from list view
 
 ### Fixed
+- Require a nonempty user email for card maintainer permissions, including filtering and detail controls
 - Prefer the validated Wormhole origin over hop-specific forwarding headers changed by layered proxies
 - Serve collected static assets with WhiteNoise when running Gunicorn with debug mode disabled
 - Disable Gunicorn's optional home-directory control socket and log Django errors with debug mode disabled
