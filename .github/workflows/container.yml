@@ -1,0 +1,124 @@
+name: Container
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: container-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      publish: ${{ steps.image.outputs.publish }}
+      tags: ${{ steps.metadata.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare image identity
+        id: image
+        env:
+          CAN_PUBLISH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          revision=$(git rev-parse HEAD)
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          echo "sha=${revision:0:12}" >> "$GITHUB_OUTPUT"
+          echo "publish=$CAN_PUBLISH" >> "$GITHUB_OUTPUT"
+
+      - name: Generate image tags and labels
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          flavor: latest=false
+          tags: |
+            type=ref,event=pr
+            type=raw,value=pr-${{ github.event.number }}-sha-${{ steps.image.outputs.sha }},enable=${{ github.event_name == 'pull_request' }}
+            type=raw,value=${{ github.ref_name }},enable=${{ github.event_name == 'push' }}
+            type=raw,value=sha-${{ steps.image.outputs.sha }},enable=${{ github.event_name != 'pull_request' }}
+            type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{version}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=semver,pattern={{major}},value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+          labels: |
+            org.opencontainers.image.revision=${{ steps.image.outputs.revision }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build local image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: ai-playground:ci
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke-test image
+        run: bash .github/container/smoke.sh
+
+      - name: Export tested image
+        if: steps.image.outputs.publish == 'true'
+        run: docker save ai-playground:ci | gzip > "$RUNNER_TEMP/container-image.tar.gz"
+
+      - name: Upload tested image
+        if: steps.image.outputs.publish == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-image
+          path: ${{ runner.temp }}/container-image.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: container-image
+          path: ${{ runner.temp }}
+
+      - name: Load tested image
+        run: docker load --input "$RUNNER_TEMP/container-image.tar.gz"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image tags
+        env:
+          IMAGE_TAGS: ${{ needs.build.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            if [[ -n "$tag" ]]; then
+              docker tag ai-playground:ci "$tag"
+              docker push "$tag"
+            fi
+          done <<< "$IMAGE_TAGS"
