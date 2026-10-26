@@ -83,6 +83,72 @@ DEBUG=True
 8. Go to http://localhost:8000/admin/ to log in
 9. Go to http://localhost:8000 to interact with the site
 
+### Container builds
+
+Build the image from the repository root with `docker build -t ai-playground .`
+(or `podman build -t ai-playground .`). The build requires network access to
+download the base image, pinned uv version, build tooling, and dependencies.
+
+The image includes the source, package metadata, README, and license. Dependencies
+are resolved and installed during the image build with `uv sync`; the local
+`uv.lock` is not included in the build context. Startup uses
+`uv run --no-sync gunicorn` to select the built environment without reinstalling
+dependencies.
+
+`.dockerignore` limits the build context to required inputs and excludes
+environment files, Python caches, uploaded media, and generated static files.
+Supply Django and database credentials at runtime through an OpenShift Secret
+or container environment variables; do not copy a populated `.env` into the image.
+Configure `ALLOWED_HOSTS`, `DEBUG`, and proxy settings for the deployment as
+described below.
+
+Root-group write permissions are retained for OpenShift's arbitrary-UID model.
+The image runs Gunicorn with `config.wsgi:application` from `/app/src`, binding to
+`0.0.0.0:8000`. These settings live in `gunicorn.conf.py`, which the container
+loads explicitly. Access logs go to stdout and error logs to stderr. Additional worker
+and timeout options can be supplied using `GUNICORN_CMD_ARGS`. The optional
+Gunicorn control socket is disabled to avoid writing into an arbitrary UID's
+unwritable home directory on OpenShift. Django error tracebacks are logged to
+stderr even with `DEBUG=false`. Keep the backend
+accessible only to the trusted proxy when proxy authentication is enabled.
+WhiteNoise serves collected static assets through the application with debug
+mode disabled. For the bundled assets, set `RUN_COLLECTSTATIC=true` so each
+container collects them before Gunicorn starts. No separate static-file server
+or shared volume is needed for this per-container setup. User-uploaded media
+still requires a separate storage/delivery strategy.
+
+The container entrypoint supports optional setup before executing its command:
+
+- `RUN_MIGRATIONS=true`: apply committed migrations with `migrate --noinput`.
+- `RUN_COLLECTSTATIC=true`: collect assets into `src/staticfiles/` with
+  `collectstatic --noinput` for WhiteNoise to serve.
+
+Both options default to false and require the same Django/database environment
+configuration as the application. Setup failures stop startup. The entrypoint
+uses `exec` to start the configured command, preserving arguments and shutdown
+signals, and never generates migrations or creates administrator accounts.
+
+For multiple OpenShift replicas, prefer a single migration Job per release using
+the same image with `RUN_MIGRATIONS=false` and command arguments
+`uv run --no-sync python src/manage.py migrate --noinput`. Run it before starting
+the updated application pods rather than enabling migrations in every replica.
+Administrator creation remains an explicit, one-off management task.
+
+For a self-contained Wormhole deployment, supply these runtime settings through
+the OpenShift Deployment or ConfigMap, not a local `.env` file excluded from the
+image:
+
+```dotenv
+PROXY_AUTH_ENABLED=true
+RUN_COLLECTSTATIC=true
+DEBUG=false
+```
+
+If login redirects to a missing `registration/login.html`, the application is
+using password login rather than proxy login. Check the pod's effective
+`PROXY_AUTH_ENABLED` setting and image version instead of adding a password
+template to conceal the missing proxy configuration.
+
 ### Proxy authentication
 
 To automatically log in users authenticated by the upstream proxy, set

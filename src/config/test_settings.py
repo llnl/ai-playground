@@ -49,6 +49,30 @@ class ProxySettingsTests(SimpleTestCase):
             middleware.index("django.contrib.auth.middleware.AuthenticationMiddleware") + 1,
         )
 
+    def test_production_errors_are_logged_to_stderr(self):
+        """Keep Django error tracebacks observable with debug mode disabled."""
+        configuration = self.load_settings(DEBUG="false")
+        self.assertFalse(configuration["DEBUG"])
+        logging = configuration["LOGGING"]
+        self.assertFalse(logging["disable_existing_loggers"])
+        self.assertEqual(logging["handlers"]["stderr"]["class"], "logging.StreamHandler")
+        self.assertEqual(logging["handlers"]["stderr"]["stream"], "ext://sys.stderr")
+        self.assertEqual(logging["loggers"]["django"]["handlers"], ["stderr"])
+        self.assertEqual(logging["loggers"]["django"]["level"], "ERROR")
+
+    def test_static_serving_preserves_security_and_proxy_origin_checks(self):
+        """Place static serving after security and canonical origin validation."""
+        configuration = self.load_settings(PROXY_AUTH_ENABLED="true")
+        middleware = configuration["MIDDLEWARE"]
+        self.assertEqual(
+            middleware.index("whitenoise.middleware.WhiteNoiseMiddleware"),
+            middleware.index("django.middleware.security.SecurityMiddleware") + 1,
+        )
+        self.assertLess(
+            middleware.index("config.middleware.NormalizeProxyHostMiddleware"),
+            middleware.index("whitenoise.middleware.WhiteNoiseMiddleware"),
+        )
+
     def test_forwarding_trust_can_be_configured_independently(self):
         """Allow trusted proxy deployment with or without remote authentication."""
         for authentication, trust in (("false", "true"), ("true", "false")):
