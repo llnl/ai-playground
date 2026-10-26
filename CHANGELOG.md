@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Build and smoke-test container images in GitHub Actions, publishing PR, branch, and release tags to GHCR
 - Container entrypoint with opt-in migrations and static collection before starting the configured command
 - Opt-in request header diagnostic endpoint with credential redaction, auth status, and non-cacheable responses
 - Opt-in trusted proxy login using forwarded user headers and synchronized, namespaced groups

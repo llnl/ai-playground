@@ -149,6 +149,42 @@ using password login rather than proxy login. Check the pod's effective
 `PROXY_AUTH_ENABLED` setting and image version instead of adding a password
 template to conceal the missing proxy configuration.
 
+### Container publishing
+
+`.github/workflows/container.yml` builds and smoke-tests Linux/AMD64 images on
+every PR, pushes to `develop` or `main`, and published GitHub releases. Images
+are published to `ghcr.io/<repository-owner>/<repository-name>`, lowercased.
+
+| Event | Published tags |
+| --- | --- |
+| Same-repository PR | `pr-42`, `pr-42-sha-<12-character-commit>` |
+| Push/merge to `develop` or `main` | Branch name and `sha-<12-character-commit>` |
+| Stable release `v1.2.3` | `v1.2.3`, `1.2.3`, `1.2`, `1`, `latest`, and SHA tag |
+| Prerelease | Release tag, full semantic version when applicable, and SHA tag; no stable aliases |
+
+Fork PRs build and test but cannot publish. PR builds use GitHub's checked-out
+merge revision, testing integration with the base branch. Branch publishing
+also covers direct pushes. Non-semantic-version releases receive their release
+tag and SHA tag; a stable published release also updates `latest`.
+
+The smoke test runs the real entrypoint and Gunicorn as an arbitrary UID with
+root-group membership, applies migrations to a disposable SQLite database,
+collects and requests CSS, checks proxy login, and rejects direct requests
+without canonical origin headers. It is not a PostgreSQL integration test.
+
+Build jobs have read-only repository permissions. Only a separate publishing
+job gets `packages: write`, logs in with `GITHUB_TOKEN`, and pushes the exact
+tested image transferred through a short-lived workflow artifact. No PAT or
+deployment/database secrets are required. Existing lint/changelog CI remains
+separate; require both CI and container checks in branch protection.
+
+The organization must permit Actions to publish packages. New GHCR packages
+default to private: make the package public for anonymous pulls, or configure
+an OpenShift image-pull secret. Use a version tag or image digest for production;
+branch/PR tags move, and unlocked dependency resolution can change a rebuilt
+image even for the same source revision. The workflow uses Buildx's Actions
+cache and cancels outdated PR builds, not in-progress branch/release builds.
+
 ### Proxy authentication
 
 To automatically log in users authenticated by the upstream proxy, set
