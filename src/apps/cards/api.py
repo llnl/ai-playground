@@ -55,7 +55,7 @@ class CardPermission(permissions.BasePermission):
         is_staff = user.is_staff
         is_superuser = user.is_superuser
         is_owner = obj.owner_id == user.id
-        is_maintainer = user.email in obj.maintainer_emails
+        is_maintainer = bool(user.email) and user.email in obj.maintainer_emails
 
         return is_staff or is_superuser or is_owner or is_maintainer
 
