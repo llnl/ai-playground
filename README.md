@@ -83,12 +83,166 @@ DEBUG=True
 8. Go to http://localhost:8000/admin/ to log in
 9. Go to http://localhost:8000 to interact with the site
 
+### Running the test suite
+
+Install the project dependencies before running tests:
+
+```bash
+uv sync
+```
+
+Move into the `src/` directory:
+
+```bash
+cd src/
+```
+
+Run the complete Django test suite:
+
+```bash
+uv run python manage.py test
+```
+
+You can also choose to run specific test files. For example, run the tests for cards:
+
+```bash
+uv run python manage.py test apps.cards
+```
+
+To run only the cards API tests:
+
+```bash
+uv run python manage.py test apps.cards.tests.CardAPITests
+```
+
+The cards tests require Django to create a temporary PostgreSQL database. The
+database user in `src/.env` therefore needs the PostgreSQL `CREATEDB`
+privilege. A PostgreSQL administrator can grant it with:
+
+```sql
+ALTER ROLE your_database_user CREATEDB;
+```
+
+Replace `your_database_user` with the value of `DB_USER`. After granting the
+privilege, rerun:
+
+```bash
+uv run python manage.py test apps.cards
+```
+
+If you cannot grant `CREATEDB` to the application user, ask the PostgreSQL
+administrator to create a dedicated test database and test user, then use
+those credentials for a test-specific settings configuration. Do not point
+tests at your development database: Django tests are designed to isolate and
+destroy their test data automatically.
+
+Django creates a separate temporary test database for each test run. Your
+development database is not modified by the test suite. If the test database
+cannot be initialized because migrations are out of date, apply migrations to
+the development database first:
+
+```bash
+uv run python manage.py migrate
+```
+
+### Cards API
+
+The cards API is available under the versioned `/api/v1/` prefix. The API uses
+Django session authentication, so a user must be logged in to make any API
+request. This is the same authentication system used by the HTML views.
+
+#### API documentation
+
+Start the development server with:
+
+```bash
+uv run python src/manage.py runserver
+```
+
+Then log in through the website or admin site and open one of these pages:
+
+- [Swagger UI](http://localhost:8000/api/v1/docs/) — an interactive API
+  explorer. Expand an endpoint to inspect its parameters and response schema.
+  Use **Try it out** to send a request from the browser.
+- [ReDoc](http://localhost:8000/api/v1/redoc/) — a readable, reference-style
+  view of the API schema.
+- [OpenAPI schema](http://localhost:8000/api/v1/schema/) — the raw schema in
+  JSON/YAML format for use with other API tools.
+
+Because the API requires login, Swagger UI requests must have the same browser
+session as the logged-in website. For state-changing requests such as POST,
+PUT, PATCH, and DELETE, Django may also require a CSRF token.
+
+#### Available endpoints
+
+Standard CRUD endpoints are provided for cards:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/v1/cards/` | List cards |
+| `POST` | `/api/v1/cards/` | Create a card |
+| `GET` | `/api/v1/cards/<id>/` | Retrieve one card |
+| `PUT` | `/api/v1/cards/<id>/` | Replace a card |
+| `PATCH` | `/api/v1/cards/<id>/` | Partially update a card |
+| `DELETE` | `/api/v1/cards/<id>/` | Delete a card |
+
+Category-specific list endpoints are also available:
+
+```text
+GET /api/v1/cards/mcp-servers/
+GET /api/v1/cards/agents/
+GET /api/v1/cards/skills/
+```
+
+All endpoints require an authenticated user. Any authenticated user can list,
+retrieve, and create cards. Only the card owner, a listed maintainer whose
+email matches the logged-in user, a staff user, or a superuser can update or
+delete an existing card.
+
+#### Creating a card
+
+The server assigns the card owner from the logged-in user. Do not include an
+`owner` field in the request body. Server-managed fields such as `id`,
+`from_official_team`, `created_at`, and `updated_at` are read-only.
+
+Example request body:
+
+```json
+{
+  "name": "Example MCP server",
+  "description": "Provides an example set of tools.",
+  "maintainers": [
+    {
+      "name": "Example Maintainer",
+      "email": "maintainer@example.com"
+    }
+  ],
+  "institution": "Example Organization",
+  "category": "mcp_server",
+  "tags": ["example", "demo"],
+  "logo_url": "https://example.com/logo.png",
+  "documentation_url": "https://example.com/docs",
+  "internal_url": "",
+  "external_url": "https://example.com",
+  "tools": [
+    {
+      "name": "example_tool",
+      "description": "An example tool."
+    }
+  ]
+}
+```
+
+Valid category values are `mcp_server`, `agent`, and `skills`. Maintainers
+must be objects with an email address, tags must be non-empty strings, and
+tools must be objects with a name.
+
 ### Project Layout
 
 * `src/config/` contains the Django configuration files and settings
 * `src/templates/` contains the high level html files that are used throughout the website
 * `src/static/` contains the css, js, and images that are used throughout the website
-* `src/apps/` contains the applications that are used throughout the website. A new app can be created with `uv run python src/manage.py startapp MYAPP src/apps/MYAPP`.
+* `src/apps/` contains the applications that are used throughout the website. A new app can be created with `uv run python manage.py startapp MYAPP src/apps/MYAPP`.
     * `src/apps/cards/` contains the `cards` apps that is the main focus of the website
         * `src/apps/cards/templates/` contains the html files for the cards app
         * `src/apps/cards/context_processors.py` contains data that can be called with double curly braces `{{}}` throughout the website (see `ai-playground/src/apps/cards/templates/cards/partials/stats_widget.html` for example). This references the model (datatable) `Cards` which houses the data.
