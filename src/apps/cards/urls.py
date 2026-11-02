@@ -16,8 +16,7 @@ def cards_by_category(request, **kwargs):
     params = {key: value for key, value in kwargs.items() if value not in (None, "")}
 
     # Automatically converts dict to url query string
-    # params = {"owner": "me", "category": "agent"} becomes owner=me&category=agent
-    # params = {"category": ["agent", "mcp_server"]} becomes category=agent&category=mcp_server
+    # params = {"owner": "me", "resource_type": "agent"} becomes owner=me&resource_type=agent
     query_string = urlencode(params, doseq=True)
 
     return redirect(f"{url}?{query_string}")
@@ -34,12 +33,12 @@ urlpatterns = [
     # /apps/cards/all/ View and search all cards
     path("all/", views.CardAllView.as_view(), name="card_all"),
     # /apps/cards/mcp_servers/ View all MCP Server cards
-    path("mcp_servers/", cards_by_category, {"category": "mcp_server"}, name="card_mcp_servers"),
+    path("mcp_servers/", cards_by_category, {"resource_type": "mcp_server"}, name="card_mcp_servers"),
     # path("mcp_servers/", views.CardMCPServersView.as_view(), name="card_mcp_servers"),
     # /apps/cards/agents/ View all Agent cards
-    path("agents/", cards_by_category, {"category": "agent"}, name="card_agents"),
+    path("agents/", cards_by_category, {"resource_type": "agent"}, name="card_agents"),
     # /apps/cards/skills/ View all SKILL.md cards
-    path("skills/", cards_by_category, {"category": "skills_md"}, name="card_skills"),
+    path("skills/", cards_by_category, {"resource_type": "skill"}, name="card_skills"),
     # /apps/cards/trending/ View trending cards
     path("trending/", cards_by_category, {"trending": "true"}, name="trending"),
     # /apps/cards/my_cards/ View user owned cards
