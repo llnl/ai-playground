@@ -2,6 +2,7 @@
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -25,7 +26,8 @@ def card_data(resource_type: str = Cards.ResourceType.MCP_SERVER) -> dict:
     """Return valid shared form data."""
     return {
         "name": "Example resource",
-        "description": "A useful AI resource.",
+        "short_description": "A useful AI resource.",
+        "long_description": "A detailed explanation of this useful AI resource.",
         "resource_type": resource_type,
         "domain": "Scientific computing",
         "tags": ["simulation", "automation"],
@@ -214,3 +216,86 @@ class CardPermissionTests(TestCase):
         self.card.refresh_from_db()
         self.assertIsNone(self.card.owner)
         self.assert_can_update(self.contact, 200)
+
+
+class CardRegistrationUITests(TestCase):
+    """Test repeatable ownership controls and type-specific registration forms."""
+
+    def setUp(self):
+        """Log in a user who can access registration pages."""
+        self.user = get_user_model().objects.create_user("registrar", "registrar@example.org", "password")
+        self.client.force_login(self.user)
+
+    def test_create_page_renders_all_progressively_enhanced_profile_sections(self):
+        """Keep every type available for no-JavaScript submission and browser switching."""
+        response = self.client.get(reverse("cards:card_create"))
+        self.assertContains(response, 'data-profile-section="mcp_server"')
+        self.assertContains(response, 'data-profile-section="agent"')
+        self.assertContains(response, 'data-profile-section="skill"')
+        self.assertContains(response, 'name="owners-TOTAL_FORMS"')
+        self.assertNotContains(response, 'name="ownership_contacts"')
+
+    def test_create_accepts_line_based_lists_and_ownership_controls(self):
+        """Convert friendly controls to validated JSON metadata when saving."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Job agent",
+                "short_description": "Submits and monitors jobs.",
+                "long_description": "Submits jobs, monitors progress, and summarizes failures.",
+                "resource_type": Cards.ResourceType.AGENT,
+                "domain": "Scientific computing",
+                "tags": "jobs\nautomation",
+                "status": Cards.Status.ACTIVE,
+                "agent-primary_purpose": "Manage scheduler jobs",
+                "agent-supported_tasks": "Submit jobs\nSummarize failures",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Applied AI Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "ai@example.org\nlead@example.org",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        card = Cards.objects.get(name="Job agent")
+        self.assertRedirects(response, card.get_absolute_url())
+        self.assertEqual(card.tags, ["jobs", "automation"])
+        self.assertEqual(card.ownership_contacts[0]["contact_emails"], ["ai@example.org", "lead@example.org"])
+        self.assertEqual(card.agent_profile.supported_tasks, ["Submit jobs", "Summarize failures"])
+
+    def test_invalid_owner_redisplays_entered_profile_values(self):
+        """Display field errors without dropping selected profile input."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Skill draft",
+                "short_description": "A draft skill.",
+                "long_description": "A detailed explanation of the draft skill.",
+                "resource_type": Cards.ResourceType.SKILL,
+                "domain": "Research",
+                "status": Cards.Status.ACTIVE,
+                "skill-purpose": "Validate research inputs",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Research Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "invalid-email",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "invalid-email is not a valid email address")
+        self.assertContains(response, "Validate research inputs")
+        self.assertFalse(Cards.objects.exists())
+
+    def test_logo_rejects_unsupported_file_extension(self):
+        """Reject a logo format outside the documented allowlist."""
+        data = card_data()
+        data["logo"] = SimpleUploadedFile("logo.gif", b"not-an-image", content_type="image/gif")
+        form = CardForm(data=data, files={"logo": data.pop("logo")})
+        self.assertFalse(form.is_valid())
+        self.assertIn("logo", form.errors)
