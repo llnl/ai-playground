@@ -5,12 +5,12 @@
 {% block page_title %}{{ card.name }}{% endblock %}
 
 {% block page_description %}
-{{ card.description }}
+{{ card.short_description }}
 {% endblock %}
 
 {% block image_header %}
-{% if card.logo_url %}
-<img src="{{ card.logo_url }}" alt="{{ card.name }} logo">
+{% if card.logo %}
+<img src="{{ card.logo.url }}" alt="{{ card.name }} logo">
 {% elif card.resource_type == "mcp_server" %}
 <i class="fa-solid fa-server" aria-hidden="true"></i>
 {% elif card.resource_type == "agent" %}
@@ -40,6 +40,10 @@
         </div>
         <dl class="detail-list">
             <div>
+                <dt>Description</dt>
+                <dd>{{ card.long_description }}</dd>
+            </div>
+            <div>
                 <dt>Domain</dt>
                 <dd>{{ card.domain }}</dd>
             </div>
@@ -61,7 +65,7 @@
         </dl>
         <div class="form-actions">
             <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Back to directory</a>
-            {% if user == card.owner or user.is_staff or user.is_superuser or user.email in card.maintainer_emails%}
+            {% if user == card.owner or user.is_staff or user.is_superuser or user.email in card.contact_emails %}
             <a class="button-link" href="{% url 'cards:card_update' card.pk %}">Update resource</a>
             <button class="button-link button-link--danger" type="button"
                 onclick="document.getElementById('delete-card-{{ card.pk }}').showModal()">Delete resource</button>

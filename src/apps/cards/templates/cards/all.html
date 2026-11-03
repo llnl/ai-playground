@@ -74,7 +74,7 @@ View all the cards available for the different AI tools.
             <input aria-label="Search cards" type="search" name="query" value="{{ search_query }}"
                 placeholder="Search...">
 
-            <h3>Category</h3>
+            <h3>Resource Type</h3>
 
             <label>
                 <input type="checkbox" name="resource_type" value="mcp_server"
@@ -141,7 +141,8 @@ View all the cards available for the different AI tools.
                     role="link" aria-label="View {{ card.name }} details">
                     <td><span class="table-cell__clamp" title="{{ card.name }}"><strong>{{ card.name }}</strong></span>
                     </td>
-                    <td><span class="table-cell__clamp" title="{{ card.description }}">{{ card.description }}</span>
+                    <td><span class="table-cell__clamp"
+                            title="{{ card.short_description }}">{{ card.short_description }}</span>
                     </td>
                     <td><span class="table-cell__clamp"
                             title="{{ card.get_resource_type_display }}">{{ card.get_resource_type_display }}</span>
@@ -188,8 +189,8 @@ View all the cards available for the different AI tools.
             <a class="resource-card" href="{% url 'cards:card_detail' card.pk %}">
                 <div class="resource-card__topline">
                     <div class="resource-card__icon" aria-hidden="true">
-                        {% if card.logo_url %}
-                        <img src="{{ card.logo_url }}" alt="">
+                        {% if card.logo %}
+                        <img src="{{ card.logo.url }}" alt="">
                         {% else %}
                         {% if card.resource_type == "agent" %}
                         <i class="fa-solid fa-robot"></i>
@@ -209,7 +210,7 @@ View all the cards available for the different AI tools.
                 </div>
 
                 <p class="resource-card__meta">{{ card.domain }}</p>
-                <p class="resource-card__description">{{ card.description }}</p>
+                <p class="resource-card__description">{{ card.short_description }}</p>
 
                 {% if card.tags %}
                 <div class="resource-card__tags" aria-label="Tags">
