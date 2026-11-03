@@ -89,60 +89,6 @@ class StringListField(forms.CharField):
         return _lines(value)
 
 
-class ToolListField(StringListField):
-    """Edit MCP tool objects without exposing raw JSON to users."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Configure the field for structured tool-row enhancement.
-
-        The browser presents separate name and description controls. Their
-        values are serialized into the hidden textarea as ``name | description``
-        so the same server-side parser also supports no-JavaScript submissions.
-        """
-        kwargs.setdefault("help_text", "Add each tool with a name and description.")
-        super().__init__(*args, **kwargs)
-        self.widget.attrs["data-repeatable"] = "tools"
-
-    def prepare_value(self, value: object) -> object:
-        """Serialize stored tool objects for the textarea fallback.
-
-        Args:
-            value: A list of tool dictionaries or an already prepared value.
-
-        Returns:
-            One ``name | description`` entry per line for lists, otherwise the
-            original value.
-        """
-        if isinstance(value, list):
-            lines = []
-            for tool in value:
-                if isinstance(tool, dict):
-                    name = tool.get("name", "")
-                    description = tool.get("description", "")
-                    lines.append(f"{name} | {description}".rstrip(" |"))
-            return "\n".join(lines)
-        return value
-
-    def to_python(self, value: object) -> list[dict[str, str]]:
-        """Convert compact tool lines into JSON-compatible dictionaries.
-
-        Args:
-            value: Submitted text containing one tool per line.
-
-        Returns:
-            Tool dictionaries containing a required-by-shape ``name`` key and
-            an optional ``description`` key.
-        """
-        tools: list[dict[str, str]] = []
-        for line in _lines(value):
-            name, separator, description = line.partition("|")
-            tool = {"name": name.strip()}
-            if separator and description.strip():
-                tool["description"] = description.strip()
-            tools.append(tool)
-        return tools
-
-
 class OwnershipForm(forms.Form):
     """Collect one organizational owner for the nested JSON contract."""
 
@@ -197,6 +143,61 @@ class OwnershipForm(forms.Form):
 
 
 OwnershipFormSet = formset_factory(OwnershipForm, extra=0, can_delete=True, min_num=1, validate_min=True)
+
+
+class ToolForm(forms.Form):
+    """Collect one structured MCP tool.
+
+    Attributes:
+        name: Required tool identifier displayed to MCP clients.
+        description: Required explanation of the tool's behavior.
+    """
+
+    name = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={"placeholder": "Example: run_simulation"}),
+    )
+    description = forms.CharField(
+        widget=forms.TextInput(attrs={"placeholder": "Example: Runs a simulation from an input file"}),
+    )
+
+
+ToolFormSet = formset_factory(ToolForm, extra=1, can_delete=True)
+
+
+def tools_initial(tools: list[dict[str, str]] | None) -> list[dict[str, str]]:
+    """Convert stored MCP tool objects into tool-formset initial rows.
+
+    Args:
+        tools: Stored tool dictionaries, or ``None`` for a new MCP profile.
+
+    Returns:
+        Name-and-description dictionaries suitable for ``ToolFormSet``.
+    """
+    return [
+        {"name": tool.get("name", ""), "description": tool.get("description", "")}
+        for tool in (tools or [])
+        if isinstance(tool, dict)
+    ]
+
+
+def tools_from_formset(formset: BaseFormSet) -> list[dict[str, str]]:
+    """Build model-ready MCP tool objects from a validated formset.
+
+    Args:
+        formset: A bound ``ToolFormSet`` whose ``is_valid()`` returned true.
+
+    Returns:
+        Non-deleted tool objects in their submitted order.
+    """
+    return [
+        {
+            "name": form.cleaned_data["name"],
+            "description": form.cleaned_data["description"],
+        }
+        for form in formset.forms
+        if form.cleaned_data and not form.cleaned_data.get("DELETE")
+    ]
 
 
 def ownership_initial(contacts: list[OwnershipContact] | None) -> list[dict[str, str]]:
@@ -393,8 +394,10 @@ class MCPServerProfileForm(ProfileForm):
         capabilities: Repeatable list of MCP or server capabilities.
         required_permissions: Repeatable list of filesystem, network, or service
             permissions required by the server.
-        tools: Repeatable structured tool entries containing names and optional
-            descriptions, stored as JSON objects.
+
+    Note:
+        Structured tool entries are managed by ``ToolFormSet`` rather
+        than this model form and assigned before the profile is saved.
     """
 
     expected_resource_type = Cards.ResourceType.MCP_SERVER
@@ -408,18 +411,16 @@ class MCPServerProfileForm(ProfileForm):
         "runtime_requirements",
         "capabilities",
         "required_permissions",
-        "tools",
     ]
     runtime_requirements = StringListField()
     capabilities = StringListField()
-    tools = ToolListField()
     required_permissions = StringListField()
 
     class Meta:
         """Expose every MCP profile field except its managed card relation."""
 
         model = MCPServerProfile
-        exclude = ["card"]
+        exclude = ["card", "tools"]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Add MCP examples and explain its conditional connection fields.
@@ -441,7 +442,6 @@ class MCPServerProfileForm(ProfileForm):
             "runtime_requirements": "Example: Python 3.12 or Node.js 22",
             "capabilities": "Example: Tools, resources, or prompts",
             "required_permissions": "Example: Read access to the project directory",
-            "tools": "Example: run_simulation | Runs a simulation from an input file",
         }
         for name, placeholder in placeholders.items():
             self.fields[name].widget.attrs["placeholder"] = placeholder

@@ -118,7 +118,7 @@ class Migration(migrations.Migration):
                 ('authentication_method', models.CharField(blank=True, max_length=200)),
                 ('runtime_requirements', models.JSONField(blank=True, default=list, validators=[apps.cards.models.validate_string_list])),
                 ('capabilities', models.JSONField(blank=True, default=list, validators=[apps.cards.models.validate_string_list])),
-                ('tools', models.JSONField(blank=True, default=list, validators=[apps.cards.models.validate_object_list])),
+                ('tools', models.JSONField(blank=True, default=list, validators=[apps.cards.models.validate_tools])),
                 ('required_permissions', models.JSONField(blank=True, default=list, validators=[apps.cards.models.validate_string_list])),
                 ('card', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='mcp_server_profile', to='cards.cards')),
             ],

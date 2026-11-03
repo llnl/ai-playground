@@ -19,11 +19,14 @@ from .forms import (
     CardForm,
     OwnershipFormSet,
     ProfileForm,
+    ToolFormSet,
     ownership_contacts_from_formset,
     ownership_initial,
     save_card_with_profile,
+    tools_from_formset,
+    tools_initial,
 )
-from .models import CardMetrics, Cards
+from .models import CardMetrics, Cards, MCPServerProfile
 
 
 class CardRegistrationMixin:
@@ -91,6 +94,20 @@ class CardRegistrationMixin:
             )
         return profile_forms, selected
 
+    def get_tool_formset(self) -> BaseFormSet:
+        """Build structured MCP tool rows for creation or editing.
+
+        Returns:
+            A POST-bound tool formset during submission. On GET, existing MCP
+            tools become initial name-and-description rows; new cards receive
+            one empty row from the formset's ``extra`` setting.
+        """
+        if self.request.method == "POST":
+            return ToolFormSet(self.request.POST, prefix="tools")
+        current_profile = self.object.get_profile() if self.object is not None else None
+        initial = tools_initial(current_profile.tools) if isinstance(current_profile, MCPServerProfile) else []
+        return ToolFormSet(initial=initial, prefix="tools")
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add profile forms and ownership controls to the template context.
 
@@ -105,6 +122,7 @@ class CardRegistrationMixin:
             profile_forms, _ = self.get_profile_forms()
             context["profile_forms"] = profile_forms
         context.setdefault("ownership_formset", self.get_ownership_formset())
+        context.setdefault("tool_formset", self.get_tool_formset())
         return context
 
     def get_registration_form(self, ownership_formset: BaseFormSet) -> CardForm:
@@ -152,7 +170,11 @@ class CardRegistrationMixin:
         form = self.get_registration_form(ownership_formset)
         profile_forms, selected = self.get_profile_forms()
         profile_form = profile_forms.get(selected, profile_forms[Cards.ResourceType.MCP_SERVER])
-        if ownership_valid and form.is_valid() and profile_form.is_valid():
+        tool_formset = self.get_tool_formset()
+        tools_valid = selected != Cards.ResourceType.MCP_SERVER or tool_formset.is_valid()
+        if tools_valid and selected == Cards.ResourceType.MCP_SERVER:
+            profile_form.instance.tools = tools_from_formset(tool_formset)
+        if ownership_valid and tools_valid and form.is_valid() and profile_form.is_valid():
             self.object = save_card_with_profile(form, profile_form, owner=self.get_registration_owner())
             return generic.edit.FormMixin.form_valid(self, form)
         return self.render_to_response(
@@ -160,6 +182,7 @@ class CardRegistrationMixin:
                 form=form,
                 profile_forms=profile_forms,
                 ownership_formset=ownership_formset,
+                tool_formset=tool_formset,
             )
         )
 

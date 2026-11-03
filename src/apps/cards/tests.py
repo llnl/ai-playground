@@ -127,6 +127,22 @@ class CardFormTests(TestCase):
         form = MCPServerProfileForm(data={"installation_instructions": "Install and run the server locally."})
         self.assertTrue(form.is_valid())
 
+    def test_mcp_model_rejects_malformed_tool_objects(self):
+        """Require both supported string properties on every stored tool."""
+        card = Cards.objects.create(**card_data())
+        profile = MCPServerProfile(
+            card=card,
+            endpoint_url="https://example.org/mcp",
+            tools=[{"name": "run_simulation"}],
+        )
+        with self.assertRaises(ValidationError):
+            profile.full_clean()
+
+    def test_mcp_profile_tools_are_managed_outside_profile_form(self):
+        """Keep structured tools out of the scalar MCP model form."""
+        form = MCPServerProfileForm(data={"endpoint_url": "https://example.org/mcp"})
+        self.assertNotIn("tools", form.fields)
+
     def test_obsolete_fields_are_rejected(self):
         """Do not silently accept fields removed from the final contract."""
         data = card_data()
@@ -291,6 +307,73 @@ class CardRegistrationUITests(TestCase):
         self.assertContains(response, "invalid-email is not a valid email address")
         self.assertContains(response, "Validate research inputs")
         self.assertFalse(Cards.objects.exists())
+
+    def test_mcp_registration_saves_structured_tool_formset(self):
+        """Persist indexed tool name and description fields as JSON objects."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Simulation MCP",
+                "short_description": "Runs simulations.",
+                "long_description": "Runs simulations from validated input files.",
+                "resource_type": Cards.ResourceType.MCP_SERVER,
+                "domain": "Scientific computing",
+                "status": Cards.Status.ACTIVE,
+                "mcp-endpoint_url": "https://example.org/mcp",
+                "tools-TOTAL_FORMS": "1",
+                "tools-INITIAL_FORMS": "0",
+                "tools-MIN_NUM_FORMS": "0",
+                "tools-MAX_NUM_FORMS": "1000",
+                "tools-0-name": "run_simulation",
+                "tools-0-description": "Runs a simulation from an input file",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Applied AI Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "ai@example.org",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        card = Cards.objects.get(name="Simulation MCP")
+        self.assertRedirects(response, card.get_absolute_url())
+        self.assertEqual(
+            card.mcp_server_profile.tools,
+            [{"name": "run_simulation", "description": "Runs a simulation from an input file"}],
+        )
+
+    def test_mcp_tool_errors_are_attached_to_structured_fields(self):
+        """Redisplay a missing tool description without creating a partial card."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Invalid MCP",
+                "short_description": "Runs simulations.",
+                "long_description": "Runs simulations from validated input files.",
+                "resource_type": Cards.ResourceType.MCP_SERVER,
+                "domain": "Scientific computing",
+                "status": Cards.Status.ACTIVE,
+                "mcp-endpoint_url": "https://example.org/mcp",
+                "tools-TOTAL_FORMS": "1",
+                "tools-INITIAL_FORMS": "0",
+                "tools-MIN_NUM_FORMS": "0",
+                "tools-MAX_NUM_FORMS": "1000",
+                "tools-0-name": "run_simulation",
+                "tools-0-description": "",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Applied AI Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "ai@example.org",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertFalse(Cards.objects.filter(name="Invalid MCP").exists())
 
     def test_logo_rejects_unsupported_file_extension(self):
         """Reject a logo format outside the documented allowlist."""

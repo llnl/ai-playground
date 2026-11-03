@@ -29,21 +29,35 @@ def validate_string_list(value: object) -> None:
         raise ValidationError("Enter a list of non-empty strings.")
 
 
-def validate_object_list(value: object) -> None:
-    """Validate a JSON value as a list of JSON objects.
+def validate_tools(value: object) -> None:
+    """Validate structured MCP tool objects stored in a JSON list.
 
-    This validator checks the outer shape only. Individual fields within each
-    object may be validated separately as the MCP tool contract evolves.
+    Each tool must contain exactly ``name`` and ``description``, and both values
+    must be non-empty strings. This mirrors the structured registration form so
+    API, admin, and programmatic model writes cannot bypass its contract.
 
     Args:
         value: Deserialized value supplied to a JSON model or form field.
 
     Raises:
-        ValidationError: If ``value`` is not a list or any item is not a
-            dictionary.
+        ValidationError: If the value is not a list, an item has the wrong
+            shape, or either supported field is empty or not a string.
     """
-    if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
-        raise ValidationError("Enter a list of objects.")
+    if not isinstance(value, list):
+        raise ValidationError("Enter a list of tools.")
+    errors = []
+    expected_keys = {"name", "description"}
+    for index, tool in enumerate(value, start=1):
+        if not isinstance(tool, dict):
+            errors.append(f"Tool {index} must be an object.")
+            continue
+        if set(tool) != expected_keys:
+            errors.append(f"Tool {index} must contain only name and description.")
+            continue
+        if any(not isinstance(tool[key], str) or not tool[key].strip() for key in expected_keys):
+            errors.append(f"Tool {index} name and description must be non-empty strings.")
+    if errors:
+        raise ValidationError(errors)
 
 
 def validate_ownership_contacts(value: object) -> None:
@@ -310,7 +324,7 @@ class MCPServerProfile(TypeProfile):
         capabilities: MCP capabilities or broader features exposed by the
             server.
         tools: Structured descriptions of tools exposed by the server. Each
-            list item is stored as a JSON object.
+            JSON object contains required ``name`` and ``description`` strings.
         required_permissions: Filesystem, network, service, or other permissions
             required to run or use the server.
 
@@ -329,7 +343,7 @@ class MCPServerProfile(TypeProfile):
     authentication_method = models.CharField(max_length=200, blank=True)
     runtime_requirements = models.JSONField(default=list, blank=True, validators=[validate_string_list])
     capabilities = models.JSONField(default=list, blank=True, validators=[validate_string_list])
-    tools = models.JSONField(default=list, blank=True, validators=[validate_object_list])
+    tools = models.JSONField(default=list, blank=True, validators=[validate_tools])
     required_permissions = models.JSONField(default=list, blank=True, validators=[validate_string_list])
 
     def clean(self) -> None:
