@@ -5,9 +5,11 @@
 ### Added
 - Initial setup of website
 - Resource grid and list views with shared filtering and navigation controls
+- Type-specific metadata profiles for MCP servers, agents, and skills
 
 ### Changed
 - Removed edit/delete buttons from list view
+- Updated shared card metadata, validation, permissions, and admin support
 
 ### Fixed
 -
