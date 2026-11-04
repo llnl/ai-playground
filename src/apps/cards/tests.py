@@ -227,18 +227,25 @@ class CardPermissionTests(TestCase):
 
 
 class CardAPITests(APITestCase):
-    """Verify authentication, ownership, permissions, and category routes."""
+    """Verify authentication, ownership, profiles, permissions, and type routes."""
 
     def setUp(self) -> None:
         """Create users and a representative card for each test."""
-        self.user = get_user_model().objects.create_user(username="owner", password="password")
-        self.other_user = get_user_model().objects.create_user(username="other", password="password")
+        self.user = get_user_model().objects.create_user(
+            username="owner", email="owner@example.org", password="password"
+        )
+        self.other_user = get_user_model().objects.create_user(
+            username="other", email="other@example.org", password="password"
+        )
         self.card = Cards.objects.create(
             owner=self.user,
             name="Test card",
             description="A test card",
-            category=Cards.Category.AGENT,
+            resource_type=Cards.ResourceType.AGENT,
+            domain="Scientific computing",
+            ownership_contacts=ownership(),
         )
+        AgentProfile.objects.create(card=self.card, primary_purpose="Test agent behavior")
 
     def test_requests_require_login(self) -> None:
         """Reject requests that do not have an authenticated user."""
@@ -251,11 +258,19 @@ class CardAPITests(APITestCase):
         self.assertEqual(self.client.get("/api/v1/cards/").status_code, 200)
         response = self.client.post(
             "/api/v1/cards/",
-            {"name": "New", "description": "Desc", "category": "mcp_server"},
+            {
+                "name": "New",
+                "description": "Desc",
+                "resource_type": "mcp_server",
+                "domain": "Scientific computing",
+                "ownership_contacts": ownership(),
+                "mcp_server_profile": {"endpoint_url": "https://example.org/mcp"},
+            },
             format="json",
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["owner"], self.user.id)
+        self.assertEqual(response.data["mcp_server_profile"]["endpoint_url"], "https://example.org/mcp")
 
     def test_only_owner_can_update(self) -> None:
         """Reject a partial update from an unrelated authenticated user."""
@@ -263,9 +278,35 @@ class CardAPITests(APITestCase):
         response = self.client.patch(f"/api/v1/cards/{self.card.pk}/", {"name": "Changed"}, format="json")
         self.assertEqual(response.status_code, 403)
 
-    def test_category_endpoint(self) -> None:
-        """Return cards matching the agent category route."""
+    def test_resource_type_endpoint(self) -> None:
+        """Return cards matching the agent resource-type route."""
         self.client.force_authenticate(self.user)
         response = self.client.get("/api/v1/cards/agents/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
+
+    def test_create_requires_matching_profile(self) -> None:
+        """Reject API creation without the selected resource type's profile."""
+        self.client.force_authenticate(self.user)
+        response = self.client.post(
+            "/api/v1/cards/",
+            {
+                "name": "Incomplete",
+                "description": "Missing its profile",
+                "resource_type": "agent",
+                "domain": "Automation",
+                "ownership_contacts": ownership(),
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("agent_profile", response.data)
+
+    def test_ownership_contact_can_update(self) -> None:
+        """Allow a listed ownership contact to update through the API."""
+        contact = get_user_model().objects.create_user(
+            username="contact", email="team@example.org", password="password"
+        )
+        self.client.force_authenticate(contact)
+        response = self.client.patch(f"/api/v1/cards/{self.card.pk}/", {"version": "2.0"}, format="json")
+        self.assertEqual(response.status_code, 200)
