@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0006_discard_legacy_card_data'),
+        ('cards', '0007_discard_legacy_card_data'),
     ]
 
     operations = [

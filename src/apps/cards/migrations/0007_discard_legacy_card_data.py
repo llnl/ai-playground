@@ -12,7 +12,7 @@ def discard_legacy_cards(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0005_alter_cards_internal_url_alter_cards_maintainers_and_more'),
+        ('cards', '0006_rename_skills_category'),
     ]
 
     operations = [migrations.RunPython(discard_legacy_cards, migrations.RunPython.noop)]
