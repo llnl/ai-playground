@@ -6,6 +6,7 @@
 - Initial setup of website
 - Resource grid and list views with shared filtering and navigation controls
 - Type-specific metadata profiles for MCP servers, agents, and skills
+- Registration and editing forms for shared, ownership, and type-specific metadata
 
 ### Changed
 - Removed edit/delete buttons from list view
