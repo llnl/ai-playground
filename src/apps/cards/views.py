@@ -7,28 +7,73 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import F, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
-from django.forms import ModelForm
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import generic
 
-from .forms import CardForm
+from .forms import PROFILE_FORMS, CardForm, save_card_with_profile
 from .models import CardMetrics, Cards
 
 
 class CardCreateView(LoginRequiredMixin, generic.CreateView):
-    """Create a new card and assign it to the authenticated user."""
+    """Create shared and type-specific records for an authenticated submitter.
+
+    The selected ``resource_type`` determines which profile form is bound. Both
+    forms must validate before the card and profile are saved atomically, and
+    the authenticated user is assigned as the card's authorization owner.
+    """
 
     model = Cards
     form_class = CardForm
     template_name = "cards/create.html"
 
-    # Make sure user gets passed into form
-    def form_valid(self, form: ModelForm) -> HttpResponse:
-        """Assign the current user as owner before saving the card."""
-        form.instance.owner = self.request.user
-        return super().form_valid(form)
+    def get_profile_form(self):
+        """Build the profile form selected by the submitted resource type.
+
+        MCP server is used as the initial display and safe fallback until a
+        valid resource type is posted. The ``profile`` prefix prevents profile
+        field names from colliding with shared card fields.
+
+        Returns:
+            A bound profile form on POST, or an unbound MCP profile form on GET.
+        """
+        resource_type = self.request.POST.get("resource_type", Cards.ResourceType.MCP_SERVER)
+        form_class = PROFILE_FORMS.get(resource_type, PROFILE_FORMS[Cards.ResourceType.MCP_SERVER])
+        return form_class(self.request.POST or None, prefix="profile")
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Add the selected profile form without replacing a supplied invalid form.
+
+        Args:
+            **kwargs: Context values supplied by Django or :meth:`post`.
+
+        Returns:
+            Template context containing both ``form`` and ``profile_form``.
+        """
+        context = super().get_context_data(**kwargs)
+        context.setdefault("profile_form", self.get_profile_form())
+        return context
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Validate both forms, save them atomically, or redisplay all errors.
+
+        Args:
+            request: Authenticated request containing shared and profile fields.
+            *args: Positional arguments supplied by Django's URL dispatcher.
+            **kwargs: Keyword arguments supplied by Django's URL dispatcher.
+
+        Returns:
+            A redirect to the new card on success, or the rendered creation
+            form with both forms' errors on failure.
+        """
+        self.object = None
+        form = self.get_form()
+        profile_form = self.get_profile_form()
+        if form.is_valid() and profile_form.is_valid():
+            self.object = save_card_with_profile(form, profile_form, owner=request.user)
+            return generic.edit.FormMixin.form_valid(self, form)
+        return self.render_to_response(self.get_context_data(form=form, profile_form=profile_form))
 
 
 class CardDetailView(LoginRequiredMixin, generic.DetailView):
@@ -59,20 +104,28 @@ class CardDetailView(LoginRequiredMixin, generic.DetailView):
 
 
 class CardUpdateView(LoginRequiredMixin, generic.UpdateView):
-    """Allow users to update only cards they own."""
+    """Update cards accessible to their submitter, contacts, or staff.
+
+    Shared and profile forms are validated together. Changing ``resource_type``
+    replaces the old profile within the same transaction rather than retaining
+    incompatible metadata.
+    """
 
     model = Cards
     form_class = CardForm
     template_name = "cards/update.html"
     context_object_name = "card"
 
-    # get queryset is a special method that returns only a subset of the table
-    # combined with DeleteView it only give access to certain urls
     def get_queryset(self) -> QuerySet:
-        """Return cards that the current user owns or maintains.
+        """Limit updates to cards the current user is authorized to modify.
+
+        Staff and superusers receive the full queryset. Other users receive
+        cards they submitted or cards listing their email in any ownership
+        contact. Contact matching is performed in Python because ownership is
+        currently stored as nested JSON.
 
         Returns:
-            QuerySet: Cards belonging to the authenticated user.
+            Cards available to the authenticated user for update.
         """
         user = self.request.user
         queryset = Cards.objects.all()
@@ -80,13 +133,63 @@ class CardUpdateView(LoginRequiredMixin, generic.UpdateView):
         if user.is_staff or user.is_superuser:
             return queryset
 
-        queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
+        allowed_ids = [card.pk for card in queryset if card.owner_id == user.pk or user.email in card.contact_emails]
+        return queryset.filter(pk__in=allowed_ids)
 
-        return queryset
+    def get_profile_form(self):
+        """Build the selected profile form and attach a matching existing profile.
+
+        If the submitted resource type differs from the stored type, the new
+        profile form has no instance; the transactional save helper will remove
+        the old profile after the shared card validates.
+
+        Returns:
+            A bound or unbound profile form for the selected resource type.
+        """
+        resource_type = self.request.POST.get("resource_type", self.object.resource_type)
+        form_class = PROFILE_FORMS.get(resource_type, PROFILE_FORMS[self.object.resource_type])
+        current_profile = self.object.get_profile()
+        instance = (
+            current_profile if current_profile and current_profile.expected_resource_type == resource_type else None
+        )
+        return form_class(self.request.POST or None, instance=instance, prefix="profile")
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Add the profile form while preserving a supplied form with errors.
+
+        Args:
+            **kwargs: Context values supplied by Django or :meth:`post`.
+
+        Returns:
+            Template context containing the card and both metadata forms.
+        """
+        context = super().get_context_data(**kwargs)
+        context.setdefault("profile_form", self.get_profile_form())
+        return context
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Validate both forms and atomically update the card and its profile.
+
+        Args:
+            request: Authenticated request containing updated metadata.
+            *args: Positional arguments supplied by Django's URL dispatcher.
+            **kwargs: URL arguments including the card primary key.
+
+        Returns:
+            A detail-page redirect on success, or the update page containing
+            validation errors on failure.
+        """
+        self.object = self.get_object()
+        form = self.get_form()
+        profile_form = self.get_profile_form()
+        if form.is_valid() and profile_form.is_valid():
+            self.object = save_card_with_profile(form, profile_form)
+            return generic.edit.FormMixin.form_valid(self, form)
+        return self.render_to_response(self.get_context_data(form=form, profile_form=profile_form))
 
 
 class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
-    """Allow users to delete only cards they own."""
+    """Delete cards accessible to their submitter, contacts, or staff."""
 
     model = Cards
     template_name = "cards/delete.html"
@@ -96,10 +199,13 @@ class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
     # get queryset is a special method that returns only a subset of the table
     # combined with DeleteView it only give access to certain urls
     def get_queryset(self) -> QuerySet:
-        """Return cards that the current user owns or maintains.
+        """Limit deletion to cards the current user is authorized to modify.
+
+        Staff and superusers can delete any card. Other users can delete cards
+        they submitted or cards listing their email as an ownership contact.
 
         Returns:
-            QuerySet: Cards belonging to the authenticated user.
+            Cards available to the authenticated user for deletion.
         """
         user = self.request.user
         queryset = Cards.objects.all()
@@ -107,13 +213,12 @@ class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
         if user.is_staff or user.is_superuser:
             return queryset
 
-        queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
-
-        return queryset
+        allowed_ids = [card.pk for card in queryset if card.owner_id == user.pk or user.email in card.contact_emails]
+        return queryset.filter(pk__in=allowed_ids)
 
 
 class CardAllView(LoginRequiredMixin, generic.ListView):
-    """Display, search, and filter all cards."""
+    """Display the searchable directory and record impressions for its results."""
 
     model = Cards
     template_name = "cards/all.html"
@@ -121,10 +226,14 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
     # Query based on "cards/all.html" <form method="get"> values
     def get_queryset(self) -> QuerySet:
-        """Return cards filtered by search text and selected categories.
+        """Apply ownership, text, resource-type, and trending filters.
+
+        General search covers submitter identity and shared display metadata.
+        Trending results aggregate the previous 30 days of metrics and rank
+        clicks more heavily than impressions.
 
         Returns:
-            QuerySet: Matching cards ordered by name.
+            Matching cards, including metric annotations for trending results.
         """
         # Logged in user
         user = self.request.user
@@ -134,7 +243,7 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
         # Specific fields
         owner = self.request.GET.get("owner")
-        categories = self.request.GET.getlist("category")
+        resource_types = self.request.GET.getlist("resource_type")
 
         # Specifically for trending/ url
         trending = self.request.GET.get("trending") == "true"
@@ -144,7 +253,10 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
         # Specifically for my_cards/ url
         if owner == "me" and not (user.is_staff or user.is_superuser):
-            queryset = queryset.filter(Q(owner=user) | Q(maintainers__contains=[{"email": user.email}]))
+            allowed_ids = [
+                card.pk for card in queryset if card.owner_id == user.pk or user.email in card.contact_emails
+            ]
+            queryset = queryset.filter(pk__in=allowed_ids)
 
         # These match the model and are a bunch of OR statements
         if query:
@@ -153,13 +265,13 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
                 | Q(owner__email__icontains=query)
                 | Q(name__icontains=query)
                 | Q(description__icontains=query)
-                | Q(maintainers__icontains=query)
-                | Q(institution__icontains=query)
+                | Q(ownership_contacts__icontains=query)
+                | Q(domain__icontains=query)
                 | Q(tags__icontains=query)
             )
 
-        if categories:
-            queryset = queryset.filter(category__in=categories)
+        if resource_types:
+            queryset = queryset.filter(resource_type__in=resource_types)
 
         if trending:
             start_date = timezone.localdate() - timedelta(days=30)
@@ -183,18 +295,18 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
         return queryset
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Add the current search and category filters to the context for the HTML template when page refreshes.
+        """Preserve active directory controls in the rendered template context.
 
         Args:
             **kwargs: Additional context arguments supplied by Django.
 
         Returns:
-            dict[str, Any]: Template context containing active filters.
+            Template context containing active filters and display mode.
         """
         context = super().get_context_data(**kwargs)
 
         context["search_query"] = self.request.GET.get("query", "")
-        context["selected_categories"] = self.request.GET.getlist("category")
+        context["selected_categories"] = self.request.GET.getlist("resource_type")
         context["owner_filter"] = self.request.GET.get("owner", "")
         context["trending"] = self.request.GET.get("trending")
         context["resource_view"] = self.request.GET.get("view", "grid")
