@@ -40,5 +40,5 @@ def card_stats(request: HttpRequest) -> dict[str, Any]:
         ),
         "total_mcp_servers": cards.filter(resource_type="mcp_server").count(),
         "total_agents": cards.filter(resource_type="agent").count(),
-        "total_skills_md": cards.filter(resource_type="skill").count(),
+        "total_skills": cards.filter(resource_type="skill").count(),
     }
