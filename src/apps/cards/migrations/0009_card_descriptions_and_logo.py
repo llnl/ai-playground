@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    dependencies = [("cards", "0007_remove_cards_category_remove_cards_external_url_and_more")]
+    dependencies = [("cards", "0008_remove_cards_category_remove_cards_external_url_and_more")]
 
     operations = [
         migrations.RenameField(

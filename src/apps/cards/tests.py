@@ -413,7 +413,8 @@ class CardAPITests(APITestCase):
         self.card = Cards.objects.create(
             owner=self.user,
             name="Test card",
-            description="A test card",
+            short_description="A test card",
+            long_description="A detailed description of the test card.",
             resource_type=Cards.ResourceType.AGENT,
             domain="Scientific computing",
             ownership_contacts=ownership(),
@@ -433,7 +434,8 @@ class CardAPITests(APITestCase):
             "/api/v1/cards/",
             {
                 "name": "New",
-                "description": "Desc",
+                "short_description": "A new MCP server.",
+                "long_description": "A detailed description of the new MCP server.",
                 "resource_type": "mcp_server",
                 "domain": "Scientific computing",
                 "ownership_contacts": ownership(),
@@ -465,7 +467,8 @@ class CardAPITests(APITestCase):
             "/api/v1/cards/",
             {
                 "name": "Incomplete",
-                "description": "Missing its profile",
+                "short_description": "Missing its profile.",
+                "long_description": "This agent submission is missing its required profile.",
                 "resource_type": "agent",
                 "domain": "Automation",
                 "ownership_contacts": ownership(),
