@@ -43,7 +43,7 @@ class Cards(models.Model):
 
         MCP_SERVER = "mcp_server", "MCP Server"
         AGENT = "agent", "Agent"
-        SKILLS_MD = "skills_md", "Skills.md"
+        SKILLS = "skills", "Skills"
 
     category = models.CharField(
         max_length=20,

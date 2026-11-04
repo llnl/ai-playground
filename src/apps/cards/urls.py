@@ -39,7 +39,7 @@ urlpatterns = [
     # /apps/cards/agents/ View all Agent cards
     path("agents/", cards_by_category, {"category": "agent"}, name="card_agents"),
     # /apps/cards/skills/ View all SKILL.md cards
-    path("skills/", cards_by_category, {"category": "skills_md"}, name="card_skills"),
+    path("skills/", cards_by_category, {"category": "skills"}, name="card_skills"),
     # /apps/cards/trending/ View trending cards
     path("trending/", cards_by_category, {"trending": "true"}, name="trending"),
     # /apps/cards/my_cards/ View user owned cards
