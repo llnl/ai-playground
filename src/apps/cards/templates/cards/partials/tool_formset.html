@@ -1,0 +1,31 @@
+<div class="profile-field profile-field--wide tool-formset" data-tool-formset>
+    <h3>Tools</h3>
+    <p class="helptext">Add each tool with a name and description.</p>
+    {{ tool_formset.management_form }}
+    {% if tool_formset.non_form_errors %}
+    <div class="form-errors" role="alert">{{ tool_formset.non_form_errors }}</div>
+    {% endif %}
+    <div class="repeatable-list__rows" data-tool-list>
+        {% for tool_form in tool_formset %}
+        <fieldset class="repeatable-row repeatable-row--tool" data-tool-form>
+            <legend class="visually-hidden">Tool <span data-tool-number>{{ forloop.counter }}</span></legend>
+            {% for hidden in tool_form.hidden_fields %}{{ hidden }}{% endfor %}
+            {% include "cards/partials/form_field.html" with field=tool_form.name %}
+            {% include "cards/partials/form_field.html" with field=tool_form.description %}
+            <span class="owner-delete-field">{{ tool_form.DELETE }}</span>
+            <button type="button" class="repeatable-remove" data-remove-tool>Remove</button>
+        </fieldset>
+        {% endfor %}
+    </div>
+    <button type="button" class="repeatable-add" data-add-tool>+ Add another tool</button>
+</div>
+
+<template id="empty-tool-form">
+    <fieldset class="repeatable-row repeatable-row--tool" data-tool-form>
+        <legend class="visually-hidden">Tool <span data-tool-number></span></legend>
+        {% include "cards/partials/form_field.html" with field=tool_formset.empty_form.name %}
+        {% include "cards/partials/form_field.html" with field=tool_formset.empty_form.description %}
+        <span class="owner-delete-field">{{ tool_formset.empty_form.DELETE }}</span>
+        <button type="button" class="repeatable-remove" data-remove-tool>Remove</button>
+    </fieldset>
+</template>

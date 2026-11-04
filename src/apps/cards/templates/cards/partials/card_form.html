@@ -1,0 +1,137 @@
+{% if form.non_field_errors %}
+<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+{% endif %}
+
+<div class="registration-card">
+    <section class="form-section" aria-labelledby="basic-heading">
+        <div class="form-section__heading">
+            <h2 id="basic-heading">Basic information</h2>
+            <p>Tell people what this resource is and choose the type that best describes it.</p>
+        </div>
+        <div class="form-grid form-grid--two">
+            <div class="form-field--wide">{% include "cards/partials/form_field.html" with field=form.name %}</div>
+            <div class="form-field--wide">{% include "cards/partials/form_field.html" with field=form.resource_type %}
+            </div>
+            <div class="form-field--wide">
+                {% include "cards/partials/form_field.html" with field=form.short_description %}</div>
+            <div class="form-field--wide">
+                {% include "cards/partials/form_field.html" with field=form.long_description %}</div>
+            <div class="form-field--wide">{% include "cards/partials/form_field.html" with field=form.logo %}</div>
+        </div>
+    </section>
+
+    <section class="form-section" aria-labelledby="profile-heading">
+        <div class="form-section__heading">
+            <h2 id="profile-heading"><span data-profile-title>Resource</span> details</h2>
+            <p>Provide the technical details users need to understand and use this resource.</p>
+        </div>
+        <div class="profile-section" data-profile-section="mcp_server">
+            <div class="requirement-notice" role="note">
+                <strong>Required connection information</strong>
+                <span>Provide an endpoint URL or installation instructions. You may provide both.</span>
+            </div>
+            {% include "cards/partials/profile_form.html" with profile_form=profile_forms.mcp_server %}
+            {% include "cards/partials/tool_formset.html" %}
+        </div>
+        <div class="profile-section" data-profile-section="agent">
+            {% include "cards/partials/profile_form.html" with profile_form=profile_forms.agent %}
+        </div>
+        <div class="profile-section" data-profile-section="skill">
+            {% include "cards/partials/profile_form.html" with profile_form=profile_forms.skill %}
+        </div>
+    </section>
+
+    <section class="form-section" aria-labelledby="ownership-heading">
+        <div class="form-section__heading">
+            <h2 id="ownership-heading">Ownership and contacts</h2>
+            <p>Add the teams, groups, or people responsible for this resource.</p>
+        </div>
+        {{ ownership_formset.management_form }}
+        {% if ownership_formset.non_form_errors %}<div class="form-errors" role="alert">
+            {{ ownership_formset.non_form_errors }}
+        </div>{% endif %}
+        <div id="owner-list" class="owner-list">
+            {% for owner_form in ownership_formset %}
+            <fieldset class="owner-card" data-owner-form>
+                <legend>Owner <span data-owner-number>{{ forloop.counter }}</span></legend>
+                {% for hidden in owner_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <div class="form-grid form-grid--two">
+                    <div class="form-field--wide">
+                        {% include "cards/partials/form_field.html" with field=owner_form.owner_name %}</div>
+                    {% include "cards/partials/form_field.html" with field=owner_form.owner_type %}
+                    <div></div>
+                    <div class="form-field--wide">
+                        {% include "cards/partials/form_field.html" with field=owner_form.contact_emails %}</div>
+                    <div class="form-field--wide">
+                        {% include "cards/partials/form_field.html" with field=owner_form.institutions %}</div>
+                </div>
+                <div class="owner-card__remove">
+                    <span class="owner-delete-field">{{ owner_form.DELETE }}</span>
+                    <button type="button" class="outline-button outline-button--danger" data-remove-owner><span
+                            aria-hidden="true">−</span> Remove owner</button>
+                </div>
+            </fieldset>
+            {% endfor %}
+        </div>
+        <button type="button" class="outline-button" id="add-owner"><span aria-hidden="true">＋</span> Add another
+            owner</button>
+    </section>
+
+    <section class="form-section" aria-labelledby="version-heading">
+        <div class="form-section__heading">
+            <h2 id="version-heading">Version and documentation</h2>
+            <p>Help users find the right release, source code, and supporting documentation.</p>
+        </div>
+        <div class="form-grid form-grid--two">
+            {% include "cards/partials/form_field.html" with field=form.version %}
+            {% include "cards/partials/form_field.html" with field=form.license %}
+            {% include "cards/partials/form_field.html" with field=form.status %}
+            <div class="form-field--wide">
+                {% include "cards/partials/form_field.html" with field=form.documentation_url %}</div>
+            <div class="form-field--wide">{% include "cards/partials/form_field.html" with field=form.repository_url %}
+            </div>
+        </div>
+    </section>
+
+    <section class="form-section" aria-labelledby="discovery-heading">
+        <div class="form-section__heading">
+            <h2 id="discovery-heading">Domains and tags</h2>
+            <p>Make this resource easier to find in the directory.</p>
+        </div>
+        <div class="form-grid">
+            {% include "cards/partials/form_field.html" with field=form.domain %}
+            {% include "cards/partials/form_field.html" with field=form.tags %}
+        </div>
+    </section>
+</div>
+
+<template id="empty-owner-form">
+    <fieldset class="owner-card" data-owner-form>
+        <legend>Owner <span data-owner-number></span></legend>
+        <div class="form-grid form-grid--two">
+            <div class="form-field--wide">
+                {% include "cards/partials/form_field.html" with field=ownership_formset.empty_form.owner_name %}</div>
+            {% include "cards/partials/form_field.html" with field=ownership_formset.empty_form.owner_type %}<div></div>
+            <div class="form-field--wide">
+                {% include "cards/partials/form_field.html" with field=ownership_formset.empty_form.contact_emails %}
+            </div>
+            <div class="form-field--wide">
+                {% include "cards/partials/form_field.html" with field=ownership_formset.empty_form.institutions %}
+            </div>
+        </div>
+        <div class="owner-card__remove">
+            <span class="owner-delete-field">{{ ownership_formset.empty_form.DELETE }}</span>
+            <button type="button" class="outline-button outline-button--danger" data-remove-owner><span
+                    aria-hidden="true">−</span> Remove owner</button>
+        </div>
+    </fieldset>
+</template>
+
+<dialog id="remove-owner-modal" class="delete-modal owner-remove-modal" aria-labelledby="remove-owner-title">
+    <p id="remove-owner-title">Are you sure you want to remove this owner?</p>
+    <p class="delete-modal__card-name"><strong data-remove-owner-name></strong></p>
+    <div class="form-actions">
+        <button class="button-link button-link--danger" type="button" data-confirm-remove-owner>Yes, remove</button>
+        <button class="button-link button-link--secondary" type="button" data-cancel-remove-owner>Cancel</button>
+    </div>
+</dialog>

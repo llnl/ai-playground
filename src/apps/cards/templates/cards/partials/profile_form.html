@@ -1,0 +1,10 @@
+{% if profile_form.non_field_errors %}
+<div class="form-errors" role="alert">{{ profile_form.non_field_errors }}</div>
+{% endif %}
+<div class="form-grid form-grid--two profile-fields">
+    {% for field in profile_form %}
+    <div class="profile-field profile-field--{{ field.field.widget.input_type }}">
+        {% include "cards/partials/form_field.html" with field=field %}
+    </div>
+    {% endfor %}
+</div>
