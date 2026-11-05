@@ -1,0 +1,45 @@
+name: Container cleanup
+
+on:
+  schedule:
+    - cron: '23 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Log candidates without deleting package versions
+        type: boolean
+        default: true
+      delete_untagged:
+        description: Also delete old untagged versions (protect deployed digests first)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: read
+  packages: write
+
+concurrency:
+  group: container-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Test retention safeguards
+        run: python3 -m unittest discover -s .github/container -p test_cleanup.py
+
+      - name: Apply container retention policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER_TYPE: ${{ github.event.repository.owner.type }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || github.event_name == 'schedule' && vars.GHCR_CLEANUP_ENABLED != 'true' }}
+          DELETE_UNTAGGED: ${{ github.event_name == 'workflow_dispatch' && inputs.delete_untagged }}
+          PROTECTED_DIGESTS: ${{ vars.GHCR_PROTECTED_DIGESTS }}
+        run: python3 .github/container/cleanup.py

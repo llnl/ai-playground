@@ -85,34 +85,24 @@ DEBUG=True
 
 ### Running the test suite
 
-Install the project dependencies before running tests:
+Install testing dependencies and run both suites from the repository root:
 
 ```bash
-uv sync
-```
-
-Move into the `src/` directory:
-
-```bash
-cd src/
-```
-
-Run the complete Django test suite:
-
-```bash
-uv run python manage.py test
+uv sync --extra tests
+uv run python src/manage.py test src --noinput
+uv run python -m unittest discover -s .github/container -p test_cleanup.py
 ```
 
 You can also choose to run specific test files. For example, run the tests for cards:
 
 ```bash
-uv run python manage.py test apps.cards
+uv run python src/manage.py test apps.cards
 ```
 
 To run only the cards API tests:
 
 ```bash
-uv run python manage.py test apps.cards.tests.CardAPITests
+uv run python src/manage.py test apps.cards.tests.CardAPITests
 ```
 
 The cards tests require Django to create a temporary PostgreSQL database. The
@@ -127,7 +117,7 @@ Replace `your_database_user` with the value of `DB_USER`. After granting the
 privilege, rerun:
 
 ```bash
-uv run python manage.py test apps.cards
+uv run python src/manage.py test apps.cards
 ```
 
 If you cannot grant `CREATEDB` to the application user, ask the PostgreSQL
@@ -142,8 +132,18 @@ cannot be initialized because migrations are out of date, apply migrations to
 the development database first:
 
 ```bash
-uv run python manage.py migrate
+uv run python src/manage.py migrate
 ```
+
+The Django suite uses the PostgreSQL configuration in `src/.env`. The database
+user must be permitted to create a test database; do not point tests at a
+production database. Card permission integration tests require JSON containment
+support and are skipped on SQLite. The cleanup tests need no database or network.
+
+Pull-request CI runs both suites on Python 3.12 with a disposable PostgreSQL 16
+service and installs WhiteNoise so collected-static-file tests also run. Require
+the CI `tests` job alongside lint, changelog, and container checks in branch
+protection.
 
 ### Cards API
 
@@ -236,6 +236,30 @@ Example request body:
 Valid category values are `mcp_server`, `agent`, and `skills`. Maintainers
 must be objects with an email address, tags must be non-empty strings, and
 tools must be objects with a name.
+
+### Container deployment
+
+Container build, runtime, OpenShift, GHCR publishing, and cleanup instructions
+are documented in [CONTAINERS.md](CONTAINERS.md).
+
+To build the image locally from the repository root:
+
+```sh
+docker build -t ai-playground .
+```
+
+### Proxy authentication
+
+AI Playground supports authentication through a trusted upstream proxy. See
+[PROXY_AUTHENTICATION.md](PROXY_AUTHENTICATION.md) for configuration, security
+requirements, header behavior, and troubleshooting.
+
+For a basic configuration, add these settings to `src/.env` and restart:
+
+```dotenv
+PROXY_AUTH_ENABLED=true
+DEBUG=false
+```
 
 ### Project Layout
 

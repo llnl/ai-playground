@@ -19,15 +19,18 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
-from .views import home
+from .diagnostics import diagnostic_headers
+from .views import application_login, home
 
 urlpatterns = [
     path("", home, name="home"),
+    path("diagnostics/headers/", diagnostic_headers, name="diagnostic_headers"),
     path("apps/cards/", include("apps.cards.urls")),
     path("api/v1/", include("apps.cards.api_urls")),
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="api-schema"), name="api-docs"),
     path("api/v1/redoc/", SpectacularRedocView.as_view(url_name="api-schema"), name="api-redoc"),
     path("admin/", admin.site.urls),
+    path("accounts/login/", application_login, name="login"),
     path("accounts/", include("django.contrib.auth.urls")),
 ]
