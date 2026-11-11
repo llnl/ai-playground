@@ -13,6 +13,7 @@ Add an MCP server, agent, skill, or other AI resource to AI Playground.
 <form class="form-card" method="post" action="{% url 'cards:card_create' %}">
     {% csrf_token %}
     {{ form }}
+    {{ profile_form }}
     <div class="form-actions">
         <button type="submit">Save card</button>
         <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Cancel</a>

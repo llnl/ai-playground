@@ -11,22 +11,34 @@ from .models import Cards
 
 
 def card_stats(request: HttpRequest) -> dict[str, Any]:
-    """Return card statistics for use in HTML templates.
+    """Return catalog-wide counts for the shared statistics widget.
+
+    Institutions are nested under ownership contacts, so their count is built
+    from the distinct institution names across all cards. The request is part
+    of Django's context-processor interface but is not otherwise inspected.
 
     Args:
         request: The current HTTP request.
 
     Returns:
-        A dictionary containing total cards, unique categories,
-        and unique institutions.
+        Counts for all cards, resource types, distinct institutions, MCP
+        servers, agents, and skills.
     """
     cards = Cards.objects.all()
 
     return {
         "total_cards": cards.count(),
-        "unique_categories": (cards.exclude(category="").values("category").distinct().count()),
-        "unique_institutions": (cards.exclude(institution="").values("institution").distinct().count()),
-        "total_mcp_servers": (cards.filter(category="mcp_server").count()),
-        "total_agents": (cards.filter(category="agent").count()),
-        "total_skills": (cards.filter(category="skills").count()),
+        "unique_categories": cards.values("resource_type").distinct().count(),
+        "unique_institutions": len(
+            {
+                institution
+                for card in cards
+                for contact in card.ownership_contacts
+                if isinstance(contact, dict)
+                for institution in contact.get("institutions", [])
+            }
+        ),
+        "total_mcp_servers": cards.filter(resource_type="mcp_server").count(),
+        "total_agents": cards.filter(resource_type="agent").count(),
+        "total_skills": cards.filter(resource_type="skill").count(),
     }

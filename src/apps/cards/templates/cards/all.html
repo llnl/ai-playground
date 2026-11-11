@@ -8,7 +8,7 @@ My Cards
 MCP Server Cards
 {% elif selected_categories|length == 1 and "agent" in selected_categories %}
 Agent Cards
-{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+{% elif selected_categories|length == 1 and "skill" in selected_categories %}
 Skills Cards
 {% elif trending == "true" %}
 Trending Cards
@@ -24,7 +24,7 @@ My Cards
 MCP Server Cards
 {% elif selected_categories|length == 1 and "agent" in selected_categories %}
 Agent Cards
-{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+{% elif selected_categories|length == 1 and "skill" in selected_categories %}
 Skills Cards
 {% elif trending == "true" %}
 Trending Cards
@@ -40,7 +40,7 @@ View all the cards created by you.
 View all the cards available for MCP Servers.
 {% elif selected_categories|length == 1 and "agent" in selected_categories %}
 View all the cards available for Agents.
-{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+{% elif selected_categories|length == 1 and "skill" in selected_categories %}
 View all the cards available for Skills.
 {% elif trending == "true" %}
 View all the cards that are trending.
@@ -56,7 +56,7 @@ View all the cards available for the different AI tools.
 <i class="fa-solid fa-server" aria-hidden="true"></i>
 {% elif selected_categories|length == 1 and "agent" in selected_categories %}
 <i class="fa-solid fa-robot" aria-hidden="true"></i>
-{% elif selected_categories|length == 1 and "skills_md" in selected_categories %}
+{% elif selected_categories|length == 1 and "skill" in selected_categories %}
 <i class="fa-solid fa-file-code" aria-hidden="true"></i>
 {% elif trending == "true" %}
 <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
@@ -77,21 +77,21 @@ View all the cards available for the different AI tools.
             <h3>Category</h3>
 
             <label>
-                <input type="checkbox" name="category" value="mcp_server"
+                <input type="checkbox" name="resource_type" value="mcp_server"
                     {% if "mcp_server" in selected_categories %}checked{% endif %}>
                 MCP Server
             </label>
 
             <label>
-                <input type="checkbox" name="category" value="agent"
+                <input type="checkbox" name="resource_type" value="agent"
                     {% if "agent" in selected_categories %}checked{% endif %}>
                 Agent
             </label>
 
             <label>
-                <input type="checkbox" name="category" value="skills_md"
-                    {% if "skills_md" in selected_categories %}checked{% endif %}>
-                Skills MD
+                <input type="checkbox" name="resource_type" value="skill"
+                    {% if "skill" in selected_categories %}checked{% endif %}>
+                Skill
             </label>
 
             {% if owner_filter %}
@@ -126,10 +126,10 @@ View all the cards available for the different AI tools.
                 <tr>
                     <th>Name</th>
                     <th>Description</th>
-                    <th>Category</th>
-                    <th>Institution</th>
+                    <th>Resource type</th>
+                    <th>Domain</th>
                     <th>Official</th>
-                    <th>External URL</th>
+                    <th>Documentation</th>
                     {% if trending  == "true" %}
                     <th>Clicks</th>
                     <th>Impressions</th>
@@ -143,14 +143,17 @@ View all the cards available for the different AI tools.
                     </td>
                     <td><span class="table-cell__clamp" title="{{ card.description }}">{{ card.description }}</span>
                     </td>
-                    <td><span class="table-cell__clamp" title="{{ card.category }}">{{ card.category }}</span></td>
-                    <td><span class="table-cell__clamp" title="{{ card.institution }}">{{ card.institution }}</span>
+                    <td><span class="table-cell__clamp"
+                            title="{{ card.get_resource_type_display }}">{{ card.get_resource_type_display }}</span>
+                    </td>
+                    <td><span class="table-cell__clamp" title="{{ card.domain }}">{{ card.domain }}</span>
                     </td>
                     <td><span class="table-cell__clamp">{% if card.from_official_team %}<span class="official-check"
                                 title="Official team resource"
                                 aria-label="Official team resource">✓</span>{% endif %}</span></td>
-                    <td><span class="table-cell__clamp">{% if card.external_url %}<a href="{{ card.external_url }}"
-                                target="_blank" rel="noopener">↗</a>{% endif %}</span></td>
+                    <td><span class="table-cell__clamp">{% if card.documentation_url %}<a
+                                href="{{ card.documentation_url }}" target="_blank"
+                                rel="noopener">↗</a>{% endif %}</span></td>
                     {% if trending  == "true" %}
                     <td><span class="table-cell__clamp">{{ card.total_clicks|default:0 }}</span></td>
                     <td><span class="table-cell__clamp">{{ card.total_impressions|default:0 }}</span></td>
@@ -188,9 +191,9 @@ View all the cards available for the different AI tools.
                         {% if card.logo_url %}
                         <img src="{{ card.logo_url }}" alt="">
                         {% else %}
-                        {% if card.category == "agent" %}
+                        {% if card.resource_type == "agent" %}
                         <i class="fa-solid fa-robot"></i>
-                        {% elif card.category == "skills_md" %}
+                        {% elif card.resource_type == "skill" %}
                         <i class="fa-solid fa-file-code"></i>
                         {% else %}
                         <i class="fa-solid fa-server"></i>
@@ -205,7 +208,7 @@ View all the cards available for the different AI tools.
                     </div>
                 </div>
 
-                <p class="resource-card__meta">{{ card.institution|default:"Unspecified institution" }}</p>
+                <p class="resource-card__meta">{{ card.domain }}</p>
                 <p class="resource-card__description">{{ card.description }}</p>
 
                 {% if card.tags %}

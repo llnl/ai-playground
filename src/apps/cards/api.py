@@ -15,7 +15,7 @@ class CardPermission(permissions.BasePermission):
     """Enforce authentication and card-level write permissions.
 
     Authenticated users may read cards and create new cards. Updating or
-    deleting an existing card is limited to its owner, a listed maintainer,
+    deleting an existing card is limited to its owner, a listed ownership contact,
     or a staff/superuser account.
     """
 
@@ -55,17 +55,17 @@ class CardPermission(permissions.BasePermission):
         is_staff = user.is_staff
         is_superuser = user.is_superuser
         is_owner = obj.owner_id == user.id
-        is_maintainer = bool(user.email) and user.email in obj.maintainer_emails
+        is_contact = bool(user.email) and user.email in obj.contact_emails
 
-        return is_staff or is_superuser or is_owner or is_maintainer
+        return is_staff or is_superuser or is_owner or is_contact
 
 
 class CardViewSet(viewsets.ModelViewSet):
-    """Provide authenticated CRUD and category endpoints for cards.
+    """Provide authenticated CRUD and resource-type endpoints for cards.
 
     The router exposes standard routes for creating, listing, retrieving,
     replacing, partially updating, and deleting cards. Creation assigns
-    ownership from the authenticated request. Category actions provide simple
+    ownership from the authenticated request. Resource-type actions provide simple
     read-only lists for MCP servers, agents, and skills cards.
     """
 
@@ -83,7 +83,7 @@ class CardViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="mcp-servers")
     def mcp_servers(self, request: Request) -> Response:
-        """Return all cards categorized as MCP servers.
+        """Return all cards whose resource type is MCP server.
 
         Args:
             request: The authenticated request supplied by DRF.
@@ -91,11 +91,11 @@ class CardViewSet(viewsets.ModelViewSet):
         Returns:
             Response: A JSON array of serialized MCP server cards.
         """
-        return self._category_response("mcp_server")
+        return self._resource_type_response(Cards.ResourceType.MCP_SERVER)
 
     @action(detail=False, methods=["get"], url_path="agents")
     def agents(self, request: Request) -> Response:
-        """Return all cards categorized as agents.
+        """Return all cards whose resource type is agent.
 
         Args:
             request: The authenticated request supplied by DRF.
@@ -103,29 +103,29 @@ class CardViewSet(viewsets.ModelViewSet):
         Returns:
             Response: A JSON array of serialized agent cards.
         """
-        return self._category_response("agent")
+        return self._resource_type_response(Cards.ResourceType.AGENT)
 
     @action(detail=False, methods=["get"], url_path="skills")
     def skills(self, request: Request) -> Response:
-        """Return all cards categorized as Skills.md cards.
+        """Return all cards whose resource type is skill.
 
         Args:
             request: The authenticated request supplied by DRF.
 
         Returns:
-            Response: A JSON array of serialized Skills.md cards.
+            Response: A JSON array of serialized skill cards.
         """
-        return self._category_response("skills")
+        return self._resource_type_response(Cards.ResourceType.SKILL)
 
-    def _category_response(self, category: str) -> Response:
-        """Build a response containing cards in one category.
+    def _resource_type_response(self, resource_type: str) -> Response:
+        """Build a response containing cards of one resource type.
 
         Args:
-            category: The stored ``Cards.category`` value to match.
+            resource_type: The stored ``Cards.resource_type`` value to match.
 
         Returns:
             Response: A name-ordered JSON array of matching cards. Pagination
                 is intentionally not applied in this initial API version.
         """
-        serializer = self.get_serializer(self.get_queryset().filter(category=category), many=True)
+        serializer = self.get_serializer(self.get_queryset().filter(resource_type=resource_type), many=True)
         return Response(serializer.data)

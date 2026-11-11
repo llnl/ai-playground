@@ -186,7 +186,7 @@ Standard CRUD endpoints are provided for cards:
 | `PATCH` | `/api/v1/cards/<id>/` | Partially update a card |
 | `DELETE` | `/api/v1/cards/<id>/` | Delete a card |
 
-Category-specific list endpoints are also available:
+Resource-type list endpoints are also available:
 
 ```text
 GET /api/v1/cards/mcp-servers/
@@ -195,7 +195,7 @@ GET /api/v1/cards/skills/
 ```
 
 All endpoints require an authenticated user. Any authenticated user can list,
-retrieve, and create cards. Only the card owner, a listed maintainer whose
+retrieve, and create cards. Only the card owner, a listed ownership contact whose
 email matches the logged-in user, a staff user, or a superuser can update or
 delete an existing card.
 
@@ -211,31 +211,31 @@ Example request body:
 {
   "name": "Example MCP server",
   "description": "Provides an example set of tools.",
-  "maintainers": [
+  "resource_type": "mcp_server",
+  "domain": "Scientific computing",
+  "ownership_contacts": [
     {
-      "name": "Example Maintainer",
-      "email": "maintainer@example.com"
+      "owner_name": "Example Team",
+      "owner_type": "team",
+      "contact_emails": ["maintainer@example.com"],
+      "institutions": ["Example Organization"]
     }
   ],
-  "institution": "Example Organization",
-  "category": "mcp_server",
   "tags": ["example", "demo"],
   "logo_url": "https://example.com/logo.png",
   "documentation_url": "https://example.com/docs",
-  "internal_url": "",
-  "external_url": "https://example.com",
-  "tools": [
-    {
-      "name": "example_tool",
-      "description": "An example tool."
-    }
-  ]
+  "repository_url": "https://example.com/repository",
+  "mcp_server_profile": {
+    "endpoint_url": "https://example.com/mcp",
+    "tools": [{"name": "example_tool", "description": "An example tool."}]
+  }
 }
 ```
 
-Valid category values are `mcp_server`, `agent`, and `skills`. Maintainers
-must be objects with an email address, tags must be non-empty strings, and
-tools must be objects with a name.
+Valid resource types are `mcp_server`, `agent`, and `skill`. Requests must
+include the matching `mcp_server_profile`, `agent_profile`, or `skill_profile`.
+Ownership contacts require an owner name, owner type, and at least one valid
+email address.
 
 ### Project Layout
 
