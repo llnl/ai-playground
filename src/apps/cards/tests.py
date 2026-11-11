@@ -2,6 +2,7 @@
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -30,7 +31,8 @@ def card_data(resource_type: str = Cards.ResourceType.MCP_SERVER) -> dict:
     """Return valid shared form data."""
     return {
         "name": "Example resource",
-        "description": "A useful AI resource.",
+        "short_description": "A useful AI resource.",
+        "long_description": "A detailed explanation of this useful AI resource.",
         "resource_type": resource_type,
         "domain": "Scientific computing",
         "tags": ["simulation", "automation"],
@@ -130,6 +132,22 @@ class CardFormTests(TestCase):
         form = MCPServerProfileForm(data={"installation_instructions": "Install and run the server locally."})
         self.assertTrue(form.is_valid())
 
+    def test_mcp_model_rejects_malformed_tool_objects(self):
+        """Require both supported string properties on every stored tool."""
+        card = Cards.objects.create(**card_data())
+        profile = MCPServerProfile(
+            card=card,
+            endpoint_url="https://example.org/mcp",
+            tools=[{"name": "run_simulation"}],
+        )
+        with self.assertRaises(ValidationError):
+            profile.full_clean()
+
+    def test_mcp_profile_tools_are_managed_outside_profile_form(self):
+        """Keep structured tools out of the scalar MCP model form."""
+        form = MCPServerProfileForm(data={"endpoint_url": "https://example.org/mcp"})
+        self.assertNotIn("tools", form.fields)
+
     def test_obsolete_fields_are_rejected(self):
         """Do not silently accept fields removed from the final contract."""
         data = card_data()
@@ -221,6 +239,161 @@ class CardPermissionTests(TestCase):
         self.assert_can_update(self.contact, 200)
 
 
+#######################################################
+# Frontend contract tests for card registration forms #
+#######################################################
+
+
+class CardRegistrationUITests(TestCase):
+    """Test repeatable ownership controls and type-specific registration forms."""
+
+    def setUp(self):
+        """Log in a user who can access registration pages."""
+        self.user = get_user_model().objects.create_user("registrar", "registrar@example.org", "password")
+        self.client.force_login(self.user)
+
+    def test_create_page_renders_all_progressively_enhanced_profile_sections(self):
+        """Keep every type available for no-JavaScript submission and browser switching."""
+        response = self.client.get(reverse("cards:card_create"))
+        self.assertContains(response, 'data-profile-section="mcp_server"')
+        self.assertContains(response, 'data-profile-section="agent"')
+        self.assertContains(response, 'data-profile-section="skill"')
+        self.assertContains(response, 'name="owners-TOTAL_FORMS"')
+        self.assertNotContains(response, 'name="ownership_contacts"')
+
+    def test_create_accepts_line_based_lists_and_ownership_controls(self):
+        """Convert friendly controls to validated JSON metadata when saving."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Job agent",
+                "short_description": "Submits and monitors jobs.",
+                "long_description": "Submits jobs, monitors progress, and summarizes failures.",
+                "resource_type": Cards.ResourceType.AGENT,
+                "domain": "Scientific computing",
+                "tags": "jobs\nautomation",
+                "status": Cards.Status.ACTIVE,
+                "agent-primary_purpose": "Manage scheduler jobs",
+                "agent-supported_tasks": "Submit jobs\nSummarize failures",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Applied AI Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "ai@example.org\nlead@example.org",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        card = Cards.objects.get(name="Job agent")
+        self.assertRedirects(response, card.get_absolute_url())
+        self.assertEqual(card.tags, ["jobs", "automation"])
+        self.assertEqual(card.ownership_contacts[0]["contact_emails"], ["ai@example.org", "lead@example.org"])
+        self.assertEqual(card.agent_profile.supported_tasks, ["Submit jobs", "Summarize failures"])
+
+    def test_invalid_owner_redisplays_entered_profile_values(self):
+        """Display field errors without dropping selected profile input."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Skill draft",
+                "short_description": "A draft skill.",
+                "long_description": "A detailed explanation of the draft skill.",
+                "resource_type": Cards.ResourceType.SKILL,
+                "domain": "Research",
+                "status": Cards.Status.ACTIVE,
+                "skill-purpose": "Validate research inputs",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Research Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "invalid-email",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "invalid-email is not a valid email address")
+        self.assertContains(response, "Validate research inputs")
+        self.assertFalse(Cards.objects.exists())
+
+    def test_mcp_registration_saves_structured_tool_formset(self):
+        """Persist indexed tool name and description fields as JSON objects."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Simulation MCP",
+                "short_description": "Runs simulations.",
+                "long_description": "Runs simulations from validated input files.",
+                "resource_type": Cards.ResourceType.MCP_SERVER,
+                "domain": "Scientific computing",
+                "status": Cards.Status.ACTIVE,
+                "mcp-endpoint_url": "https://example.org/mcp",
+                "tools-TOTAL_FORMS": "1",
+                "tools-INITIAL_FORMS": "0",
+                "tools-MIN_NUM_FORMS": "0",
+                "tools-MAX_NUM_FORMS": "1000",
+                "tools-0-name": "run_simulation",
+                "tools-0-description": "Runs a simulation from an input file",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Applied AI Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "ai@example.org",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        card = Cards.objects.get(name="Simulation MCP")
+        self.assertRedirects(response, card.get_absolute_url())
+        self.assertEqual(
+            card.mcp_server_profile.tools,
+            [{"name": "run_simulation", "description": "Runs a simulation from an input file"}],
+        )
+
+    def test_mcp_tool_errors_are_attached_to_structured_fields(self):
+        """Redisplay a missing tool description without creating a partial card."""
+        response = self.client.post(
+            reverse("cards:card_create"),
+            {
+                "name": "Invalid MCP",
+                "short_description": "Runs simulations.",
+                "long_description": "Runs simulations from validated input files.",
+                "resource_type": Cards.ResourceType.MCP_SERVER,
+                "domain": "Scientific computing",
+                "status": Cards.Status.ACTIVE,
+                "mcp-endpoint_url": "https://example.org/mcp",
+                "tools-TOTAL_FORMS": "1",
+                "tools-INITIAL_FORMS": "0",
+                "tools-MIN_NUM_FORMS": "0",
+                "tools-MAX_NUM_FORMS": "1000",
+                "tools-0-name": "run_simulation",
+                "tools-0-description": "",
+                "owners-TOTAL_FORMS": "1",
+                "owners-INITIAL_FORMS": "0",
+                "owners-MIN_NUM_FORMS": "1",
+                "owners-MAX_NUM_FORMS": "1000",
+                "owners-0-owner_name": "Applied AI Team",
+                "owners-0-owner_type": "team",
+                "owners-0-contact_emails": "ai@example.org",
+                "owners-0-institutions": "Example Laboratory",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertFalse(Cards.objects.filter(name="Invalid MCP").exists())
+
+    def test_logo_rejects_unsupported_file_extension(self):
+        """Reject a logo format outside the documented allowlist."""
+        data = card_data()
+        data["logo"] = SimpleUploadedFile("logo.gif", b"not-an-image", content_type="image/gif")
+        form = CardForm(data=data, files={"logo": data.pop("logo")})
+        self.assertFalse(form.is_valid())
+        self.assertIn("logo", form.errors)
+
+
 ################################
 # Tests for the cards REST API #
 ################################
@@ -240,7 +413,8 @@ class CardAPITests(APITestCase):
         self.card = Cards.objects.create(
             owner=self.user,
             name="Test card",
-            description="A test card",
+            short_description="A test card",
+            long_description="A detailed description of the test card.",
             resource_type=Cards.ResourceType.AGENT,
             domain="Scientific computing",
             ownership_contacts=ownership(),
@@ -260,7 +434,8 @@ class CardAPITests(APITestCase):
             "/api/v1/cards/",
             {
                 "name": "New",
-                "description": "Desc",
+                "short_description": "A new MCP server.",
+                "long_description": "A detailed description of the new MCP server.",
                 "resource_type": "mcp_server",
                 "domain": "Scientific computing",
                 "ownership_contacts": ownership(),
@@ -292,7 +467,8 @@ class CardAPITests(APITestCase):
             "/api/v1/cards/",
             {
                 "name": "Incomplete",
-                "description": "Missing its profile",
+                "short_description": "Missing its profile.",
+                "long_description": "This agent submission is missing its required profile.",
                 "resource_type": "agent",
                 "domain": "Automation",
                 "ownership_contacts": ownership(),

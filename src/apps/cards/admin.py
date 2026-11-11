@@ -22,9 +22,12 @@ class CardsAdmin(admin.ModelAdmin):
 
     list_display = ("name", "resource_type", "domain", "status", "owner", "updated_at")
     list_filter = ("resource_type", "status", "from_official_team")
-    search_fields = ("name", "description", "domain", "ownership_contacts", "tags")
+    search_fields = ("name", "short_description", "long_description", "domain", "ownership_contacts", "tags")
     fieldsets = (
-        ("Shared metadata", {"fields": ("name", "description", "resource_type", "domain", "tags")}),
+        (
+            "Shared metadata",
+            {"fields": ("name", "short_description", "long_description", "resource_type", "domain", "tags")},
+        ),
         ("Ownership and contacts", {"fields": ("owner", "ownership_contacts", "from_official_team")}),
         (
             "Release and links",
@@ -36,7 +39,7 @@ class CardsAdmin(admin.ModelAdmin):
                     "repository_url",
                     "license",
                     "last_verified",
-                    "logo_url",
+                    "logo",
                 )
             },
         ),

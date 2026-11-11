@@ -8,8 +8,10 @@ stored in JSON fields before model or form data is saved.
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator
+from django.core.files.uploadedfile import UploadedFile
+from django.core.validators import EmailValidator, FileExtensionValidator
 from django.db import models
+from django.db.models.fields.files import FieldFile
 from django.urls import reverse
 
 
@@ -27,21 +29,35 @@ def validate_string_list(value: object) -> None:
         raise ValidationError("Enter a list of non-empty strings.")
 
 
-def validate_object_list(value: object) -> None:
-    """Validate a JSON value as a list of JSON objects.
+def validate_tools(value: object) -> None:
+    """Validate structured MCP tool objects stored in a JSON list.
 
-    This validator checks the outer shape only. Individual fields within each
-    object may be validated separately as the MCP tool contract evolves.
+    Each tool must contain exactly ``name`` and ``description``, and both values
+    must be non-empty strings. This mirrors the structured registration form so
+    API, admin, and programmatic model writes cannot bypass its contract.
 
     Args:
         value: Deserialized value supplied to a JSON model or form field.
 
     Raises:
-        ValidationError: If ``value`` is not a list or any item is not a
-            dictionary.
+        ValidationError: If the value is not a list, an item has the wrong
+            shape, or either supported field is empty or not a string.
     """
-    if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
-        raise ValidationError("Enter a list of objects.")
+    if not isinstance(value, list):
+        raise ValidationError("Enter a list of tools.")
+    errors = []
+    expected_keys = {"name", "description"}
+    for index, tool in enumerate(value, start=1):
+        if not isinstance(tool, dict):
+            errors.append(f"Tool {index} must be an object.")
+            continue
+        if set(tool) != expected_keys:
+            errors.append(f"Tool {index} must contain only name and description.")
+            continue
+        if any(not isinstance(tool[key], str) or not tool[key].strip() for key in expected_keys):
+            errors.append(f"Tool {index} name and description must be non-empty strings.")
+    if errors:
+        raise ValidationError(errors)
 
 
 def validate_ownership_contacts(value: object) -> None:
@@ -95,6 +111,20 @@ def validate_ownership_contacts(value: object) -> None:
         raise ValidationError(errors)
 
 
+def validate_logo_size(value: UploadedFile | FieldFile) -> None:
+    """Validate the maximum size of an uploaded or already stored logo.
+
+    Args:
+        value: Django's temporary upload object during form validation or the
+            model field's file wrapper during model validation.
+
+    Raises:
+        ValidationError: If the image exceeds five mebibytes.
+    """
+    if value and value.size > 5 * 1024 * 1024:
+        raise ValidationError("Logo files must be 5 MB or smaller.")
+
+
 class Cards(models.Model):
     """Store metadata shared by every discoverable catalog resource.
 
@@ -108,7 +138,8 @@ class Cards(models.Model):
         owner: Authenticated Django user who submitted or owns the record for
             authorization purposes. Deleting that user leaves the card intact.
         name: Human-readable resource name displayed throughout the catalog.
-        description: General explanation of what the resource is and does.
+        short_description: Concise catalog summary of the resource.
+        long_description: Detailed explanation of what the resource does.
         resource_type: Canonical type that selects the required MCP server,
             agent, or skill profile.
         domain: Broad subject area or application domain. This remains free text
@@ -125,7 +156,7 @@ class Cards(models.Model):
         license: Optional license name or identifier governing resource use.
         last_verified: Optional date when the resource or its metadata was last
             checked.
-        logo_url: Optional URL for an image representing the resource.
+        logo: Optional uploaded image representing the resource.
         created_at: Timestamp automatically recorded when the card is created.
         updated_at: Timestamp automatically refreshed whenever the card is saved.
 
@@ -158,7 +189,8 @@ class Cards(models.Model):
         related_name="cards",
     )
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    short_description = models.CharField(max_length=200)
+    long_description = models.TextField()
     resource_type = models.CharField(max_length=20, choices=ResourceType.choices)
     domain = models.CharField(max_length=200)
     tags = models.JSONField(default=list, blank=True, validators=[validate_string_list])
@@ -170,7 +202,14 @@ class Cards(models.Model):
     repository_url = models.URLField(blank=True)
     license = models.CharField(max_length=100, blank=True)
     last_verified = models.DateField(null=True, blank=True)
-    logo_url = models.URLField(blank=True)
+    logo = models.ImageField(
+        upload_to="cards/logos/",
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["png", "jpg", "jpeg", "webp"]),
+            validate_logo_size,
+        ],
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -193,20 +232,6 @@ class Cards(models.Model):
             for email in contact.get("contact_emails", [])
             if isinstance(email, str)
         ]
-
-    @property
-    def maintainer_emails(self) -> list[str]:
-        """Return contact emails under the legacy template-facing property.
-
-        This alias is limited to permission rendering in templates while those
-        templates transition from maintainer terminology to ownership contacts.
-
-        TODO: remove this before the 1.0 release once all templates have been updated.
-
-        Returns:
-            The same flattened list as :attr:`contact_emails`.
-        """
-        return self.contact_emails
 
     def get_profile(self) -> "MCPServerProfile | AgentProfile | SkillProfile | None":
         """Return the profile relation selected by ``resource_type``.
@@ -299,7 +324,7 @@ class MCPServerProfile(TypeProfile):
         capabilities: MCP capabilities or broader features exposed by the
             server.
         tools: Structured descriptions of tools exposed by the server. Each
-            list item is stored as a JSON object.
+            JSON object contains required ``name`` and ``description`` strings.
         required_permissions: Filesystem, network, service, or other permissions
             required to run or use the server.
 
@@ -318,7 +343,7 @@ class MCPServerProfile(TypeProfile):
     authentication_method = models.CharField(max_length=200, blank=True)
     runtime_requirements = models.JSONField(default=list, blank=True, validators=[validate_string_list])
     capabilities = models.JSONField(default=list, blank=True, validators=[validate_string_list])
-    tools = models.JSONField(default=list, blank=True, validators=[validate_object_list])
+    tools = models.JSONField(default=list, blank=True, validators=[validate_tools])
     required_permissions = models.JSONField(default=list, blank=True, validators=[validate_string_list])
 
     def clean(self) -> None:

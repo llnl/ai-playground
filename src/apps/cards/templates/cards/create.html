@@ -2,22 +2,23 @@
 
 {% block title %}Create a Card{% endblock %}
 
-{% block page_title %}Create a Card for your AI Tool{% endblock %}
+{% block page_title %}Register an AI Resource{% endblock %}
 
 {% block page_description %}
-Add an MCP server, agent, skill, or other AI resource to AI Playground.
+Add an MCP server, agent, or skill to AI Playground. Fields marked with * are required.
 {% endblock %}
 
 {% block content %}
 
-<form class="form-card" method="post" action="{% url 'cards:card_create' %}">
+<form class="form-card" method="post" action="{% url 'cards:card_create' %}" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
-    {{ form }}
-    {{ profile_form }}
-    <div class="form-actions">
-        <button type="submit">Save card</button>
+    {% include "cards/partials/card_form.html" %}
+    <div class="form-actions form-actions--registration">
         <a class="button-link button-link--secondary" href="{% url 'cards:card_all' %}">Cancel</a>
+        <button type="submit">Submit resource</button>
     </div>
 </form>
 
 {% endblock %}
+
+{% block extra_scripts %}{% load static %}<script src="{% static 'js/card-form.js' %}" defer></script>{% endblock %}

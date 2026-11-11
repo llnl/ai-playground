@@ -1,5 +1,6 @@
 """Cards app views. It houses the card create, detail, update, delete, and search table views."""
 
+import json
 from datetime import timedelta
 from typing import Any
 
@@ -7,56 +8,152 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import F, Q, QuerySet, Sum, Value
 from django.db.models.functions import Coalesce
+from django.forms.formsets import BaseFormSet
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import generic
 
-from .forms import PROFILE_FORMS, CardForm, save_card_with_profile
-from .models import CardMetrics, Cards
+from .forms import (
+    PROFILE_FORMS,
+    CardForm,
+    OwnershipFormSet,
+    ProfileForm,
+    ToolFormSet,
+    ownership_contacts_from_formset,
+    ownership_initial,
+    save_card_with_profile,
+    tools_from_formset,
+    tools_initial,
+)
+from .models import CardMetrics, Cards, MCPServerProfile
 
 
-class CardCreateView(LoginRequiredMixin, generic.CreateView):
-    """Create shared and type-specific records for an authenticated submitter.
+class CardRegistrationMixin:
+    """Coordinate shared, ownership, and type-specific registration forms.
 
-    The selected ``resource_type`` determines which profile form is bound. Both
-    forms must validate before the card and profile are saved atomically, and
-    the authenticated user is assigned as the card's authorization owner.
+    Create and update pages render all profile forms so JavaScript can switch
+    resource types immediately. Only the selected profile is validated and
+    persisted. Ownership rows are converted to the nested JSON value expected
+    by :class:`Cards` before the shared form is validated.
+
+    Attributes:
+        profile_prefixes: Stable form prefixes used to prevent similarly named
+            fields from different resource profiles colliding in one request.
+        object: Existing card during updates, or ``None`` during creation.
     """
 
-    model = Cards
-    form_class = CardForm
-    template_name = "cards/create.html"
+    object: Cards | None
+    profile_prefixes = {
+        Cards.ResourceType.MCP_SERVER: "mcp",
+        Cards.ResourceType.AGENT: "agent",
+        Cards.ResourceType.SKILL: "skill",
+    }
 
-    def get_profile_form(self):
-        """Build the profile form selected by the submitted resource type.
-
-        MCP server is used as the initial display and safe fallback until a
-        valid resource type is posted. The ``profile`` prefix prevents profile
-        field names from colliding with shared card fields.
+    def get_ownership_formset(self) -> BaseFormSet:
+        """Build ownership controls from submitted or persisted metadata.
 
         Returns:
-            A bound profile form on POST, or an unbound MCP profile form on GET.
+            A POST-bound formset during submission. On GET, update views receive
+            rows converted from stored ownership JSON, while create views start
+            with one team owner so the form works without JavaScript.
         """
-        resource_type = self.request.POST.get("resource_type", Cards.ResourceType.MCP_SERVER)
-        form_class = PROFILE_FORMS.get(resource_type, PROFILE_FORMS[Cards.ResourceType.MCP_SERVER])
-        return form_class(self.request.POST or None, prefix="profile")
+        if self.request.method == "POST":
+            return OwnershipFormSet(self.request.POST, prefix="owners")
+        initial = (
+            ownership_initial(self.object.ownership_contacts) if self.object is not None else [{"owner_type": "team"}]
+        )
+        return OwnershipFormSet(initial=initial, prefix="owners")
+
+    def get_profile_forms(self) -> tuple[dict[str, ProfileForm], str]:
+        """Build all profile forms and identify the selected resource type.
+
+        All three forms are rendered so browser JavaScript can switch sections
+        without another request. On POST they are all bound, but the view only
+        validates and saves the form matching ``resource_type``. During updates,
+        the existing profile is attached only to its corresponding form.
+
+        Returns:
+            A mapping from resource type to prefixed profile form, followed by
+            the submitted, stored, or default MCP server resource type.
+        """
+        default_type = self.object.resource_type if self.object is not None else Cards.ResourceType.MCP_SERVER
+        selected = self.request.POST.get("resource_type", default_type)
+        current_profile = self.object.get_profile() if self.object is not None else None
+        profile_forms: dict[str, ProfileForm] = {}
+        for resource_type, form_class in PROFILE_FORMS.items():
+            instance = (
+                current_profile
+                if current_profile is not None and current_profile.expected_resource_type == resource_type
+                else None
+            )
+            profile_forms[resource_type] = form_class(
+                self.request.POST if self.request.method == "POST" else None,
+                instance=instance,
+                prefix=self.profile_prefixes[resource_type],
+            )
+        return profile_forms, selected
+
+    def get_tool_formset(self) -> BaseFormSet:
+        """Build structured MCP tool rows for creation or editing.
+
+        Returns:
+            A POST-bound tool formset during submission. On GET, existing MCP
+            tools become initial name-and-description rows; new cards receive
+            one empty row from the formset's ``extra`` setting.
+        """
+        if self.request.method == "POST":
+            return ToolFormSet(self.request.POST, prefix="tools")
+        current_profile = self.object.get_profile() if self.object is not None else None
+        initial = tools_initial(current_profile.tools) if isinstance(current_profile, MCPServerProfile) else []
+        return ToolFormSet(initial=initial, prefix="tools")
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Add the selected profile form without replacing a supplied invalid form.
+        """Add profile forms and ownership controls to the template context.
 
         Args:
             **kwargs: Context values supplied by Django or :meth:`post`.
 
         Returns:
-            Template context containing both ``form`` and ``profile_form``.
+            Template context containing the shared form and all profile forms.
         """
         context = super().get_context_data(**kwargs)
-        context.setdefault("profile_form", self.get_profile_form())
+        if "profile_forms" not in context:
+            profile_forms, _ = self.get_profile_forms()
+            context["profile_forms"] = profile_forms
+        context.setdefault("ownership_formset", self.get_ownership_formset())
+        context.setdefault("tool_formset", self.get_tool_formset())
         return context
 
+    def get_registration_form(self, ownership_formset: BaseFormSet) -> CardForm:
+        """Build the shared card form with validated ownership JSON injected.
+
+        Args:
+            ownership_formset: Bound owner controls for the current request.
+
+        Returns:
+            A bound shared metadata form. Ownership JSON is injected only when
+            the formset is valid, allowing ownership errors to remain attached
+            to their individual controls.
+        """
+        data = self.request.POST.copy()
+        if ownership_formset.is_valid():
+            data["ownership_contacts"] = json.dumps(ownership_contacts_from_formset(ownership_formset))
+        form_kwargs = self.get_form_kwargs()
+        form_kwargs["data"] = data
+        return self.get_form_class()(**form_kwargs)
+
+    def get_registration_owner(self) -> Any | None:
+        """Return the authenticated owner for creation but not updates.
+
+        Returns:
+            The requesting user when creating a card. ``None`` during updates
+            preserves the card's existing authorization owner.
+        """
+        return self.request.user if self.object is None else None
+
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """Validate both forms, save them atomically, or redisplay all errors.
+        """Validate the coordinated forms and atomically persist the resource.
 
         Args:
             request: Authenticated request containing shared and profile fields.
@@ -64,16 +161,38 @@ class CardCreateView(LoginRequiredMixin, generic.CreateView):
             **kwargs: Keyword arguments supplied by Django's URL dispatcher.
 
         Returns:
-            A redirect to the new card on success, or the rendered creation
-            form with both forms' errors on failure.
+            A detail-page redirect on success, or the current registration page
+            with shared, ownership, and selected-profile errors on failure.
         """
-        self.object = None
-        form = self.get_form()
-        profile_form = self.get_profile_form()
-        if form.is_valid() and profile_form.is_valid():
-            self.object = save_card_with_profile(form, profile_form, owner=request.user)
+        self.object = self.get_object() if isinstance(self, generic.UpdateView) else None
+        ownership_formset = self.get_ownership_formset()
+        ownership_valid = ownership_formset.is_valid()
+        form = self.get_registration_form(ownership_formset)
+        profile_forms, selected = self.get_profile_forms()
+        profile_form = profile_forms.get(selected, profile_forms[Cards.ResourceType.MCP_SERVER])
+        tool_formset = self.get_tool_formset()
+        tools_valid = selected != Cards.ResourceType.MCP_SERVER or tool_formset.is_valid()
+        if tools_valid and selected == Cards.ResourceType.MCP_SERVER:
+            profile_form.instance.tools = tools_from_formset(tool_formset)
+        if ownership_valid and tools_valid and form.is_valid() and profile_form.is_valid():
+            self.object = save_card_with_profile(form, profile_form, owner=self.get_registration_owner())
             return generic.edit.FormMixin.form_valid(self, form)
-        return self.render_to_response(self.get_context_data(form=form, profile_form=profile_form))
+        return self.render_to_response(
+            self.get_context_data(
+                form=form,
+                profile_forms=profile_forms,
+                ownership_formset=ownership_formset,
+                tool_formset=tool_formset,
+            )
+        )
+
+
+class CardCreateView(CardRegistrationMixin, LoginRequiredMixin, generic.CreateView):
+    """Create a card, its ownership metadata, and one matching profile."""
+
+    model = Cards
+    form_class = CardForm
+    template_name = "cards/create.html"
 
 
 class CardDetailView(LoginRequiredMixin, generic.DetailView):
@@ -103,7 +222,7 @@ class CardDetailView(LoginRequiredMixin, generic.DetailView):
         return response
 
 
-class CardUpdateView(LoginRequiredMixin, generic.UpdateView):
+class CardUpdateView(CardRegistrationMixin, LoginRequiredMixin, generic.UpdateView):
     """Update cards accessible to their submitter, contacts, or staff.
 
     Shared and profile forms are validated together. Changing ``resource_type``
@@ -135,57 +254,6 @@ class CardUpdateView(LoginRequiredMixin, generic.UpdateView):
 
         allowed_ids = [card.pk for card in queryset if card.owner_id == user.pk or user.email in card.contact_emails]
         return queryset.filter(pk__in=allowed_ids)
-
-    def get_profile_form(self):
-        """Build the selected profile form and attach a matching existing profile.
-
-        If the submitted resource type differs from the stored type, the new
-        profile form has no instance; the transactional save helper will remove
-        the old profile after the shared card validates.
-
-        Returns:
-            A bound or unbound profile form for the selected resource type.
-        """
-        resource_type = self.request.POST.get("resource_type", self.object.resource_type)
-        form_class = PROFILE_FORMS.get(resource_type, PROFILE_FORMS[self.object.resource_type])
-        current_profile = self.object.get_profile()
-        instance = (
-            current_profile if current_profile and current_profile.expected_resource_type == resource_type else None
-        )
-        return form_class(self.request.POST or None, instance=instance, prefix="profile")
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Add the profile form while preserving a supplied form with errors.
-
-        Args:
-            **kwargs: Context values supplied by Django or :meth:`post`.
-
-        Returns:
-            Template context containing the card and both metadata forms.
-        """
-        context = super().get_context_data(**kwargs)
-        context.setdefault("profile_form", self.get_profile_form())
-        return context
-
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """Validate both forms and atomically update the card and its profile.
-
-        Args:
-            request: Authenticated request containing updated metadata.
-            *args: Positional arguments supplied by Django's URL dispatcher.
-            **kwargs: URL arguments including the card primary key.
-
-        Returns:
-            A detail-page redirect on success, or the update page containing
-            validation errors on failure.
-        """
-        self.object = self.get_object()
-        form = self.get_form()
-        profile_form = self.get_profile_form()
-        if form.is_valid() and profile_form.is_valid():
-            self.object = save_card_with_profile(form, profile_form)
-            return generic.edit.FormMixin.form_valid(self, form)
-        return self.render_to_response(self.get_context_data(form=form, profile_form=profile_form))
 
 
 class CardDeleteView(LoginRequiredMixin, generic.DeleteView):
@@ -264,7 +332,8 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
                 Q(owner__username__icontains=query)
                 | Q(owner__email__icontains=query)
                 | Q(name__icontains=query)
-                | Q(description__icontains=query)
+                | Q(short_description__icontains=query)
+                | Q(long_description__icontains=query)
                 | Q(ownership_contacts__icontains=query)
                 | Q(domain__icontains=query)
                 | Q(tags__icontains=query)
