@@ -2,7 +2,7 @@
 
 The router generates standard collection and detail routes under
 ``/api/v1/cards/`` for GET, POST, PUT, PATCH, and DELETE, along with the
-category-specific collection actions declared by ``CardViewSet``.
+resource-type collection actions declared by ``CardViewSet``.
 """
 
 from rest_framework.routers import DefaultRouter

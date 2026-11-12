@@ -11,11 +11,11 @@
 {% block image_header %}
 {% if card.logo_url %}
 <img src="{{ card.logo_url }}" alt="{{ card.name }} logo">
-{% elif card.category == "mcp_server" %}
+{% elif card.resource_type == "mcp_server" %}
 <i class="fa-solid fa-server" aria-hidden="true"></i>
-{% elif card.category == "agent" %}
+{% elif card.resource_type == "agent" %}
 <i class="fa-solid fa-robot" aria-hidden="true"></i>
-{% elif card.category == "skills_md" %}
+{% elif card.resource_type == "skill" %}
 <i class="fa-solid fa-file-code" aria-hidden="true"></i>
 {% else %}
 <i class="fa-solid fa-infinity" aria-hidden="true"></i>
@@ -26,7 +26,7 @@
 
 <article class="detail-card">
     <div>
-        <p class="eyebrow">{{ card.get_category_display|default:"AI resource" }}</p>
+        <p class="eyebrow">{{ card.get_resource_type_display|default:"AI resource" }}</p>
         <div class="detail-card__heading">
             <h2>About this resource {% if card.from_official_team %}<span class="official-badge"><span
                         class="official-check" title="Official team resource"
@@ -40,31 +40,23 @@
         </div>
         <dl class="detail-list">
             <div>
-                <dt>Institution</dt>
-                <dd>{{ card.institution }}</dd>
+                <dt>Domain</dt>
+                <dd>{{ card.domain }}</dd>
             </div>
             <div>
-                <dt>Maintainers</dt>
-                <dd>{% for maintainer in card.maintainers %}<span class="maintainer">{{ maintainer.name }}
-                        ({{ maintainer.email }})</span>{% endfor %}
+                <dt>Owners</dt>
+                <dd>{% for owner in card.ownership_contacts %}<span class="maintainer">{{ owner.owner_name }}
+                        ({{ owner.contact_emails|join:", " }})</span>{% endfor %}
                 </dd>
             </div>
             <div>
                 <dt>Tags</dt>
                 <dd>{% for tag in card.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</dd>
             </div>
-            <div>
-                <dt>Tools</dt>
-                <dd>{% for tool in card.tools %}<span class="tool"
-                        title="{{ tool.name }}: {{ tool.description }}"><strong
-                            class="tool__name">{{ tool.name }}</strong><span
-                            class="tool__description">{{ tool.description }}</span></span>{% endfor %}</dd>
-            </div>
             <div class="detail-list__links">
                 <dt>Links</dt>
                 <dd><a href="{{ card.documentation_url }}" target="_blank" rel="noopener">Open documentation ↗</a></dd>
-                <dd><a href="{{ card.internal_url }}" target="_blank" rel="noopener">Visit Internal Link ↗</a></dd>
-                <dd><a href="{{ card.external_url }}" target="_blank" rel="noopener">Visit External Link ↗</a></dd>
+                <dd><a href="{{ card.repository_url }}" target="_blank" rel="noopener">Open repository ↗</a></dd>
             </div>
         </dl>
         <div class="form-actions">
