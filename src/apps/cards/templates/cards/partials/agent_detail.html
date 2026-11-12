@@ -1,0 +1,83 @@
+<section class="detail-panel" aria-labelledby="agent-purpose-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-bullseye"></i></span>
+        <h2 id="agent-purpose-heading">Purpose and supported tasks</h2>
+    </div>
+    <div class="detail-copy">{{ profile.primary_purpose|linebreaksbr }}</div>
+    {% if profile.supported_tasks %}<div class="metadata-tile-grid metadata-tile-grid--spaced">
+        {% for value in profile.supported_tasks %}<div class="metadata-tile">{{ value }}</div>{% endfor %}</div>
+    {% endif %}
+</section>
+
+{% if profile.agent_type or profile.primary_model or profile.framework or profile.interface or profile.deployment_mode %}
+<section class="detail-panel" aria-labelledby="agent-technical-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-microchip"></i></span>
+        <h2 id="agent-technical-heading">Technical profile</h2>
+    </div>
+    <dl class="fact-grid">
+        {% if profile.agent_type %}<div>
+            <dt>Agent type</dt>
+            <dd>{{ profile.agent_type }}</dd>
+        </div>{% endif %}
+        {% if profile.primary_model %}<div>
+            <dt>Primary model</dt>
+            <dd>{{ profile.primary_model }}</dd>
+        </div>{% endif %}
+        {% if profile.framework %}<div>
+            <dt>Framework</dt>
+            <dd>{{ profile.framework }}</dd>
+        </div>{% endif %}
+        {% if profile.interface %}<div>
+            <dt>Interface</dt>
+            <dd>{{ profile.interface }}</dd>
+        </div>{% endif %}
+        {% if profile.deployment_mode %}<div>
+            <dt>Deployment mode</dt>
+            <dd>{{ profile.deployment_mode }}</dd>
+        </div>{% endif %}
+    </dl>
+</section>
+{% endif %}
+
+{% if profile.inputs or profile.outputs or profile.tool_dependencies %}
+<section class="detail-panel" aria-labelledby="agent-io-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-arrow-right-arrow-left"></i></span>
+        <h2 id="agent-io-heading">Inputs, outputs, and integrations</h2>
+    </div>
+    <div class="detail-columns">
+        {% if profile.inputs %}<div class="detail-subsection">
+            <h3>Inputs</h3>{% include "cards/partials/string_list.html" with values=profile.inputs %}
+        </div>{% endif %}
+        {% if profile.outputs %}<div class="detail-subsection">
+            <h3>Outputs</h3>{% include "cards/partials/string_list.html" with values=profile.outputs %}
+        </div>{% endif %}
+        {% if profile.tool_dependencies %}<div class="detail-subsection">
+            <h3>Integrations and tool dependencies</h3>
+            {% include "cards/partials/string_list.html" with values=profile.tool_dependencies %}
+        </div>{% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if profile.autonomy_level or profile.human_approval_requirements or profile.known_limitations %}
+<section class="detail-panel" aria-labelledby="agent-governance-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-shield-halved"></i></span>
+        <h2 id="agent-governance-heading">Autonomy and safeguards</h2>
+    </div>
+    {% if profile.autonomy_level %}<div class="detail-subsection">
+        <h3>Autonomy level</h3>
+        <p>{{ profile.autonomy_level }}</p>
+    </div>{% endif %}
+    {% if profile.human_approval_requirements %}<div class="detail-subsection">
+        <h3>Human approval requirements</h3>
+        <div class="detail-copy">{{ profile.human_approval_requirements|linebreaksbr }}</div>
+    </div>{% endif %}
+    {% if profile.known_limitations %}<div class="detail-subsection">
+        <h3>Known limitations</h3>
+        <div class="detail-copy">{{ profile.known_limitations|linebreaksbr }}</div>
+    </div>{% endif %}
+</section>
+{% endif %}

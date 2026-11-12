@@ -1,0 +1,87 @@
+<section class="detail-panel" aria-labelledby="skill-purpose-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-wand-magic-sparkles"></i></span>
+        <h2 id="skill-purpose-heading">Purpose and activation</h2>
+    </div>
+    <div class="detail-copy">{{ profile.purpose|linebreaksbr }}</div>
+    {% if profile.skill_format or profile.activation_method %}<dl class="fact-grid fact-grid--spaced">
+        {% if profile.skill_format %}<div>
+            <dt>Format</dt>
+            <dd>{{ profile.skill_format }}</dd>
+        </div>{% endif %}
+        {% if profile.activation_method %}<div>
+            <dt>Activation method</dt>
+            <dd>{{ profile.activation_method }}</dd>
+        </div>{% endif %}
+    </dl>{% endif %}
+    {% if profile.trigger_phrases %}<div class="detail-subsection">
+        <h3>Trigger phrases</h3>{% include "cards/partials/string_list.html" with values=profile.trigger_phrases %}
+    </div>{% endif %}
+</section>
+
+{% if profile.compatible_agents or profile.compatible_platforms %}
+<section class="detail-panel" aria-labelledby="skill-compatibility-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-puzzle-piece"></i></span>
+        <h2 id="skill-compatibility-heading">Compatibility</h2>
+    </div>
+    <div class="detail-columns">
+        {% if profile.compatible_agents %}<div class="detail-subsection">
+            <h3>Compatible agents</h3>
+            {% include "cards/partials/string_list.html" with values=profile.compatible_agents %}
+        </div>{% endif %}
+        {% if profile.compatible_platforms %}<div class="detail-subsection">
+            <h3>Compatible platforms</h3>
+            {% include "cards/partials/string_list.html" with values=profile.compatible_platforms %}
+        </div>{% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if profile.required_context or profile.dependencies or profile.constraints %}
+<section class="detail-panel" aria-labelledby="skill-requirements-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-list-check"></i></span>
+        <h2 id="skill-requirements-heading">Requirements and constraints</h2>
+    </div>
+    <div class="detail-columns">
+        {% if profile.required_context %}<div class="detail-subsection">
+            <h3>Required context</h3>
+            {% include "cards/partials/string_list.html" with values=profile.required_context %}
+        </div>{% endif %}
+        {% if profile.dependencies %}<div class="detail-subsection">
+            <h3>Dependencies</h3>{% include "cards/partials/string_list.html" with values=profile.dependencies %}
+        </div>{% endif %}
+        {% if profile.constraints %}<div class="detail-subsection">
+            <h3>Constraints</h3>{% include "cards/partials/string_list.html" with values=profile.constraints %}
+        </div>{% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if profile.inputs or profile.outputs %}
+<section class="detail-panel" aria-labelledby="skill-io-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-arrow-right-arrow-left"></i></span>
+        <h2 id="skill-io-heading">Inputs and outputs</h2>
+    </div>
+    <div class="detail-columns">
+        {% if profile.inputs %}<div class="detail-subsection">
+            <h3>Inputs</h3>{% include "cards/partials/string_list.html" with values=profile.inputs %}
+        </div>{% endif %}
+        {% if profile.outputs %}<div class="detail-subsection">
+            <h3>Outputs</h3>{% include "cards/partials/string_list.html" with values=profile.outputs %}
+        </div>{% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if profile.examples %}
+<section class="detail-panel" aria-labelledby="skill-examples-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-lightbulb"></i></span>
+        <h2 id="skill-examples-heading">Examples</h2>
+    </div>
+    {% include "cards/partials/string_list.html" with values=profile.examples ordered=True %}
+</section>
+{% endif %}

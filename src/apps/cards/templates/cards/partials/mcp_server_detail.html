@@ -1,0 +1,75 @@
+{% if profile.protocol_version or profile.transport or profile.deployment_mode or profile.endpoint_url or profile.authentication_method %}
+<section class="detail-panel" aria-labelledby="mcp-connection-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-plug"></i></span>
+        <h2 id="mcp-connection-heading">Connection and deployment</h2>
+    </div>
+    <dl class="fact-grid">
+        {% if profile.protocol_version %}<div>
+            <dt>Protocol version</dt>
+            <dd>{{ profile.protocol_version }}</dd>
+        </div>{% endif %}
+        {% if profile.transport %}<div>
+            <dt>Transport</dt>
+            <dd>{{ profile.transport }}</dd>
+        </div>{% endif %}
+        {% if profile.deployment_mode %}<div>
+            <dt>Deployment mode</dt>
+            <dd>{{ profile.deployment_mode }}</dd>
+        </div>{% endif %}
+        {% if profile.authentication_method %}<div>
+            <dt>Authentication</dt>
+            <dd>{{ profile.authentication_method }}</dd>
+        </div>{% endif %}
+        {% if profile.endpoint_url %}<div class="fact-grid__wide">
+            <dt>Endpoint</dt>
+            <dd class="breakable"><a href="{{ profile.endpoint_url }}">{{ profile.endpoint_url }}</a></dd>
+        </div>{% endif %}
+    </dl>
+</section>
+{% endif %}
+
+{% if profile.capabilities %}
+<section class="detail-panel" aria-labelledby="mcp-capabilities-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-bolt"></i></span>
+        <h2 id="mcp-capabilities-heading">Capabilities</h2>
+    </div>
+    <div class="metadata-tile-grid">{% for value in profile.capabilities %}<div class="metadata-tile">{{ value }}</div>
+        {% endfor %}</div>
+</section>
+{% endif %}
+
+{% if profile.tools %}
+<section class="detail-panel" aria-labelledby="mcp-tools-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-screwdriver-wrench"></i></span>
+        <h2 id="mcp-tools-heading">Tools</h2>
+    </div>
+    <div class="metadata-tile-grid">{% for tool in profile.tools %}<article class="metadata-tile metadata-tile--tool">
+            <h3>{{ tool.name }}</h3>
+            <p>{{ tool.description }}</p>
+        </article>{% endfor %}</div>
+</section>
+{% endif %}
+
+{% if profile.installation_instructions or profile.runtime_requirements or profile.required_permissions %}
+<section class="detail-panel" aria-labelledby="mcp-requirements-heading">
+    <div class="detail-panel__heading"><span class="detail-panel__icon" aria-hidden="true"><i
+                class="fa-solid fa-list-check"></i></span>
+        <h2 id="mcp-requirements-heading">Setup and requirements</h2>
+    </div>
+    {% if profile.installation_instructions %}<div class="detail-subsection">
+        <h3>Installation instructions</h3>
+        <div class="detail-copy">{{ profile.installation_instructions|linebreaksbr }}</div>
+    </div>{% endif %}
+    {% if profile.runtime_requirements %}<div class="detail-subsection">
+        <h3>Runtime requirements</h3>
+        {% include "cards/partials/string_list.html" with values=profile.runtime_requirements %}
+    </div>{% endif %}
+    {% if profile.required_permissions %}<div class="detail-subsection">
+        <h3>Required permissions</h3>
+        {% include "cards/partials/string_list.html" with values=profile.required_permissions %}
+    </div>{% endif %}
+</section>
+{% endif %}
