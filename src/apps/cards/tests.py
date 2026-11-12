@@ -394,6 +394,108 @@ class CardRegistrationUITests(TestCase):
         self.assertIn("logo", form.errors)
 
 
+############################################
+# Frontend display tests for catalog cards #
+############################################
+
+
+class CardDisplayUITests(TestCase):
+    """Test shared, type-specific, and directory metadata presentation."""
+
+    def setUp(self):
+        """Log in a viewer used for detail and directory requests."""
+        self.user = get_user_model().objects.create_user("viewer", "viewer@example.org", "password")
+        self.client.force_login(self.user)
+
+    def create_card(self, resource_type: str, **overrides) -> Cards:
+        """Create a card with shared display metadata."""
+        data = card_data(resource_type)
+        data.update(overrides)
+        return Cards.objects.create(owner=self.user, **data)
+
+    def test_agent_detail_renders_shared_and_agent_metadata_only(self):
+        """Show populated shared and agent fields without unrelated sections or empty labels."""
+        card = self.create_card(Cards.ResourceType.AGENT, license="Apache-2.0", last_verified="2026-11-01")
+        AgentProfile.objects.create(
+            card=card,
+            primary_purpose="Coordinate simulation jobs",
+            supported_tasks=["Submit jobs", "Summarize failures"],
+            primary_model="Example Model",
+        )
+
+        response = self.client.get(card.get_absolute_url())
+
+        self.assertContains(response, "Purpose and supported tasks")
+        self.assertContains(response, "Technical profile")
+        self.assertContains(response, "Coordinate simulation jobs")
+        self.assertContains(response, "Submit jobs")
+        self.assertContains(response, "Applied AI Team")
+        self.assertContains(response, "Example Laboratory")
+        self.assertContains(response, "Apache-2.0")
+        self.assertNotContains(response, "Connection and deployment")
+        self.assertNotContains(response, "Purpose and activation")
+        self.assertNotContains(response, "Known limitations")
+
+    def test_mcp_detail_renders_structured_tools(self):
+        """Render MCP metadata and structured tools without agent fields."""
+        card = self.create_card(Cards.ResourceType.MCP_SERVER)
+        MCPServerProfile.objects.create(
+            card=card,
+            endpoint_url="https://example.org/mcp",
+            transport="Streamable HTTP",
+            tools=[{"name": "run_simulation", "description": "Run a validated simulation"}],
+        )
+
+        response = self.client.get(card.get_absolute_url())
+
+        self.assertContains(response, "Connection and deployment")
+        self.assertContains(response, "Tools")
+        self.assertContains(response, "run_simulation")
+        self.assertContains(response, "Run a validated simulation")
+        self.assertNotContains(response, "Primary purpose")
+
+    def test_skill_detail_omits_empty_optional_fields(self):
+        """Show required skill metadata without blank optional labels."""
+        card = self.create_card(Cards.ResourceType.SKILL)
+        SkillProfile.objects.create(card=card, purpose="Validate scientific inputs", examples=["Validate this file"])
+
+        response = self.client.get(card.get_absolute_url())
+
+        self.assertContains(response, "Purpose and activation")
+        self.assertContains(response, "Examples")
+        self.assertContains(response, "Validate scientific inputs")
+        self.assertContains(response, "Validate this file")
+        self.assertNotContains(response, "Compatible platforms")
+        self.assertNotContains(response, "Connection and deployment")
+
+    def test_directory_displays_labels_and_filters_by_type_and_status(self):
+        """Present human-readable labels and apply combined directory filters."""
+        agent = self.create_card(Cards.ResourceType.AGENT, name="Active agent")
+        AgentProfile.objects.create(card=agent, primary_purpose="Help users")
+        skill = self.create_card(Cards.ResourceType.SKILL, name="Archived skill", status=Cards.Status.ARCHIVED)
+        SkillProfile.objects.create(card=skill, purpose="Teach workflows")
+
+        response = self.client.get(
+            reverse("cards:card_all"),
+            {"resource_type": Cards.ResourceType.SKILL, "status": Cards.Status.ARCHIVED},
+        )
+
+        self.assertContains(response, "Archived skill")
+        self.assertContains(response, "Skill")
+        self.assertContains(response, "Archived")
+        self.assertNotContains(response, "Active agent")
+
+    def test_directory_searches_ownership_metadata(self):
+        """Find cards by displayed owner, institution, and contact metadata."""
+        card = self.create_card(Cards.ResourceType.AGENT, name="Ownership search result")
+        AgentProfile.objects.create(card=card, primary_purpose="Help users")
+
+        for query in ("Applied AI", "Example Laboratory", "team@example.org"):
+            with self.subTest(query=query):
+                response = self.client.get(reverse("cards:card_all"), {"query": query})
+                self.assertContains(response, card.name)
+
+
 ################################
 # Tests for the cards REST API #
 ################################

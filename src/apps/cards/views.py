@@ -312,6 +312,7 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
         # Specific fields
         owner = self.request.GET.get("owner")
         resource_types = self.request.GET.getlist("resource_type")
+        statuses = self.request.GET.getlist("status")
 
         # Specifically for trending/ url
         trending = self.request.GET.get("trending") == "true"
@@ -328,19 +329,38 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
         # These match the model and are a bunch of OR statements
         if query:
+            normalized_query = query.casefold()
+            matching_contact_ids = [
+                card.pk
+                for card in queryset
+                if any(
+                    normalized_query in value.casefold()
+                    for contact in card.ownership_contacts
+                    if isinstance(contact, dict)
+                    for value in (
+                        contact.get("owner_name", ""),
+                        *contact.get("contact_emails", []),
+                        *contact.get("institutions", []),
+                    )
+                    if isinstance(value, str)
+                )
+            ]
             queryset = queryset.filter(
                 Q(owner__username__icontains=query)
                 | Q(owner__email__icontains=query)
                 | Q(name__icontains=query)
                 | Q(short_description__icontains=query)
                 | Q(long_description__icontains=query)
-                | Q(ownership_contacts__icontains=query)
                 | Q(domain__icontains=query)
                 | Q(tags__icontains=query)
+                | Q(pk__in=matching_contact_ids)
             )
 
         if resource_types:
             queryset = queryset.filter(resource_type__in=resource_types)
+
+        if statuses:
+            queryset = queryset.filter(status__in=statuses)
 
         if trending:
             start_date = timezone.localdate() - timedelta(days=30)
@@ -359,7 +379,7 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
                 .order_by("-trending_score", "name")
             )
         else:
-            queryset.order_by("name")
+            queryset = queryset.order_by("name")
 
         return queryset
 
@@ -376,6 +396,7 @@ class CardAllView(LoginRequiredMixin, generic.ListView):
 
         context["search_query"] = self.request.GET.get("query", "")
         context["selected_categories"] = self.request.GET.getlist("resource_type")
+        context["selected_statuses"] = self.request.GET.getlist("status")
         context["owner_filter"] = self.request.GET.get("owner", "")
         context["trending"] = self.request.GET.get("trending")
         context["resource_view"] = self.request.GET.get("view", "grid")

@@ -1,0 +1,3 @@
+{% if ordered %}<ol class="metadata-values">{% else %}<ul class="metadata-values">{% endif %}
+        {% for value in values %}<li>{{ value }}</li>{% endfor %}
+        {% if ordered %}</ol>{% else %}</ul>{% endif %}

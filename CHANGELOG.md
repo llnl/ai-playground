@@ -12,6 +12,7 @@
 ### Changed
 - Removed edit/delete buttons from list view
 - Updated shared card metadata, validation, permissions, and admin support
+- Updated directory and detail pages to present shared and type-specific metadata
 
 ### Fixed
 -

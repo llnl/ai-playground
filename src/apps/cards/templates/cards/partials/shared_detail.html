@@ -1,0 +1,78 @@
+<section class="detail-panel sidebar-panel" aria-labelledby="resource-information-heading">
+    <h2 id="resource-information-heading">Resource information</h2>
+    <dl class="sidebar-facts">
+        <div>
+            <dt>Resource type</dt>
+            <dd>{{ card.get_resource_type_display }}</dd>
+        </div>
+        <div>
+            <dt>Domain</dt>
+            <dd>{{ card.domain }}</dd>
+        </div>
+        <div>
+            <dt>Status</dt>
+            <dd><span class="status-badge status-badge--{{ card.status }}">{{ card.get_status_display }}</span></dd>
+        </div>
+        {% if card.version %}<div>
+            <dt>Version</dt>
+            <dd>{{ card.version }}</dd>
+        </div>{% endif %}
+        {% if card.license %}<div>
+            <dt>License</dt>
+            <dd>{{ card.license }}</dd>
+        </div>{% endif %}
+        {% if card.last_verified %}<div>
+            <dt>Last verified</dt>
+            <dd><time datetime="{{ card.last_verified|date:'Y-m-d' }}">{{ card.last_verified|date:"M j, Y" }}</time>
+            </dd>
+        </div>{% endif %}
+        <div>
+            <dt>Last updated</dt>
+            <dd><time datetime="{{ card.updated_at|date:'c' }}">{{ card.updated_at|date:"M j, Y" }}</time></dd>
+        </div>
+        <div>
+            <dt>Official resource</dt>
+            <dd>{% if card.from_official_team %}Yes{% else %}No{% endif %}</dd>
+        </div>
+    </dl>
+</section>
+
+<section class="detail-panel sidebar-panel" aria-labelledby="ownership-heading">
+    <h2 id="ownership-heading">Ownership and contacts</h2>
+    <div class="sidebar-owners">
+        {% for owner in card.ownership_contacts %}
+        <section class="sidebar-owner">
+            <h3>{{ owner.owner_name }}</h3>
+            <p class="sidebar-owner__type">{{ owner.owner_type|title }}</p>
+            {% if owner.institutions %}<p class="sidebar-owner__institutions">{{ owner.institutions|join:", " }}</p>
+            {% endif %}
+            <ul aria-label="Contact emails for {{ owner.owner_name }}">
+                {% for email in owner.contact_emails %}<li><a href="mailto:{{ email }}">{{ email }}</a></li>{% endfor %}
+            </ul>
+        </section>
+        {% endfor %}
+    </div>
+</section>
+
+{% if card.tags %}
+<section class="detail-panel sidebar-panel" aria-labelledby="tags-heading">
+    <h2 id="tags-heading">Tags</h2>
+    <div class="value-list" aria-label="Resource tags">
+        {% for tag in card.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if card.documentation_url or card.repository_url %}
+<section class="detail-panel sidebar-panel" aria-labelledby="links-heading">
+    <h2 id="links-heading">Links</h2>
+    <nav class="sidebar-links" aria-label="Resource links">
+        {% if card.documentation_url %}<a href="{{ card.documentation_url }}" target="_blank" rel="noopener"><i
+                class="fa-solid fa-book" aria-hidden="true"></i><span>Documentation</span><span
+                aria-hidden="true">↗</span></a>{% endif %}
+        {% if card.repository_url %}<a href="{{ card.repository_url }}" target="_blank" rel="noopener"><i
+                class="fa-brands fa-github" aria-hidden="true"></i><span>Repository</span><span
+                aria-hidden="true">↗</span></a>{% endif %}
+    </nav>
+</section>
+{% endif %}

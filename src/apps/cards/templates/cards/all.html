@@ -94,6 +94,33 @@ View all the cards available for the different AI tools.
                 Skill
             </label>
 
+            <h3>Status</h3>
+            <label>
+                <input type="checkbox" name="status" value="experimental"
+                    {% if "experimental" in selected_statuses %}checked{% endif %}>
+                Experimental
+            </label>
+            <label>
+                <input type="checkbox" name="status" value="beta"
+                    {% if "beta" in selected_statuses %}checked{% endif %}>
+                Beta
+            </label>
+            <label>
+                <input type="checkbox" name="status" value="active"
+                    {% if "active" in selected_statuses %}checked{% endif %}>
+                Active
+            </label>
+            <label>
+                <input type="checkbox" name="status" value="deprecated"
+                    {% if "deprecated" in selected_statuses %}checked{% endif %}>
+                Deprecated
+            </label>
+            <label>
+                <input type="checkbox" name="status" value="archived"
+                    {% if "archived" in selected_statuses %}checked{% endif %}>
+                Archived
+            </label>
+
             {% if owner_filter %}
             <input type="hidden" name="owner" value="{{ owner_filter }}">
             {% endif %}
@@ -128,6 +155,8 @@ View all the cards available for the different AI tools.
                     <th>Description</th>
                     <th>Resource type</th>
                     <th>Domain</th>
+                    <th>Status</th>
+                    <th>Owner</th>
                     <th>Official</th>
                     <th>Documentation</th>
                     {% if trending  == "true" %}
@@ -149,6 +178,12 @@ View all the cards available for the different AI tools.
                     </td>
                     <td><span class="table-cell__clamp" title="{{ card.domain }}">{{ card.domain }}</span>
                     </td>
+                    <td><span class="status-badge status-badge--{{ card.status }}">{{ card.get_status_display }}</span>
+                    </td>
+                    <td><span class="table-cell__clamp">
+                            {% with primary_owner=card.ownership_contacts.0 %}{{ primary_owner.owner_name }}{% if primary_owner.institutions %}
+                            · {{ primary_owner.institutions.0 }}{% endif %}{% endwith %}
+                        </span></td>
                     <td><span class="table-cell__clamp">{% if card.from_official_team %}<span class="official-check"
                                 title="Official team resource"
                                 aria-label="Official team resource">✓</span>{% endif %}</span></td>
@@ -162,7 +197,7 @@ View all the cards available for the different AI tools.
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="2">No cards found.</td>
+                    <td colspan="8">No resources match the selected filters.</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -203,14 +238,23 @@ View all the cards available for the different AI tools.
                     </div>
                     <div class="resource-card__title">
                         <h2>{{ card.name }}</h2>
+                        <span class="resource-badge resource-badge--type">{{ card.get_resource_type_display }}</span>
                         {% if card.from_official_team %}
                         <span class="resource-badge resource-badge--official">Official</span>
                         {% endif %}
                     </div>
                 </div>
 
-                <p class="resource-card__meta">{{ card.domain }}</p>
+                <p class="resource-card__meta">{{ card.domain }}{% if card.version %} · v{{ card.version }}{% endif %}
+                </p>
                 <p class="resource-card__description">{{ card.short_description }}</p>
+
+                {% with primary_owner=card.ownership_contacts.0 %}
+                <p class="resource-card__owner"><i class="fa-solid fa-building" aria-hidden="true"></i>
+                    <span>{{ primary_owner.owner_name }}{% if primary_owner.institutions %} ·
+                        {{ primary_owner.institutions.0 }}{% endif %}</span>
+                </p>
+                {% endwith %}
 
                 {% if card.tags %}
                 <div class="resource-card__tags" aria-label="Tags">
@@ -221,6 +265,7 @@ View all the cards available for the different AI tools.
                 {% endif %}
 
                 <div class="resource-card__footer">
+                    <span class="status-badge status-badge--{{ card.status }}">{{ card.get_status_display }}</span>
                     {% if trending == "true" %}
                     <div class="resource-card__metrics" aria-label="Trending metrics">
                         <span title="Clicks"><i class="fa-solid fa-arrow-pointer" aria-hidden="true"></i>
